@@ -10508,7 +10508,12 @@ function checkLicense(feature) {
 
 // 출력 기능 게이트 — 로그인 + 구독 확인
 function requireOutput(featureName) {
-  if (LICENSE_TEST_MODE) return true; // ★ 테스트 모드: 무료 허용
+  // ★ 로컬 파일(오프라인)로 실행 중이면 출력 차단
+  if (window.location.protocol === 'file:') {
+    snack('출력 기능은 인터넷 연결이 필요합니다');
+    return false;
+  }
+  if (LICENSE_TEST_MODE) return true; // 테스트 모드: 온라인이면 무료 허용
   // 정식 모드: 로그인 확인
   if (!LICENSE.userId) {
     if (confirm(featureName + ' 기능을 사용하려면 로그인이 필요합니다.\n\n로그인하시겠습니까?')) {
