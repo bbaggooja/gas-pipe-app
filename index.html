@@ -10652,6 +10652,92 @@ window.onSubscriptionResult = function(info) {
 
 // 페이지 로드 시 로그인 UI 초기화
 window.addEventListener('load', function() { updateLoginUI(); });
+
+// ══════════════════════════════════
+//  앱 업데이트 공지 팝업
+// ══════════════════════════════════
+var APP_VERSION = '2.9.1';
+var APP_UPDATE_KEY = 'app_update_seen_' + APP_VERSION;
+
+function showUpdatePopup() {
+  // 이미 본 버전이면 표시 안 함
+  if (localStorage.getItem(APP_UPDATE_KEY)) return;
+
+  var overlay = document.createElement('div');
+  overlay.id = 'update-popup-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+
+  overlay.innerHTML = ''
+    + '<div style="background:linear-gradient(135deg,#0f2240,#1a3a6e);border:1.5px solid rgba(0,212,255,0.3);border-radius:18px;max-width:420px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.6)">'
+    + '<div style="padding:20px 20px 0">'
+    + '<div style="text-align:center;margin-bottom:12px">'
+    + '<div style="font-size:36px;margin-bottom:4px">🔧</div>'
+    + '<div style="font-size:18px;font-weight:800;color:#00d4ff">가스배관 관경산출 v' + APP_VERSION + '</div>'
+    + '<div style="font-size:11px;color:#8ab4d4;margin-top:4px">업데이트 내용</div>'
+    + '</div>'
+    + '<div style="background:rgba(0,0,0,0.25);border-radius:12px;padding:14px;margin-bottom:12px">'
+    + '<div style="font-size:13px;font-weight:700;color:#00ff9d;margin-bottom:8px">✅ 구현 완료 기능</div>'
+    + '<div style="font-size:12px;color:#e8f4ff;line-height:1.7">'
+    + '• <b>관경검토</b> — Pole식 / Cox식 / Weymouth식 선택 가능<br>'
+    + '• <b>방폭거리 계산</b> — 위험장소 분류 + DXF 도면 자동 작성<br>'
+    + '• <b>기밀시험</b> — 질소량 계산 포함<br>'
+    + '• <b>KGS 코드 검색</b> — 183개 기준 코드 즉시 검색<br>'
+    + '• <b>단위환산</b> — 가스 관련 주요 단위 변환'
+    + '</div>'
+    + '</div>'
+    + '<div style="background:rgba(255,160,50,0.08);border:1px solid rgba(255,160,50,0.25);border-radius:12px;padding:14px;margin-bottom:12px">'
+    + '<div style="font-size:13px;font-weight:700;color:#ffcc02;margin-bottom:8px">🚧 구현 중 기능</div>'
+    + '<div style="font-size:12px;color:#e8f4ff;line-height:1.7">'
+    + '• <b>살수장치</b> — 자동 살수량 계산 + DXF 도면 작도<br>'
+    + '• <b>내진성능평가</b> — 배관 내진 검토 + PDF 출력<br>'
+    + '• <b>서류작성</b> — 특정시설 서식 자동 작성'
+    + '</div>'
+    + '</div>'
+    + '<div style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:12px;padding:14px;margin-bottom:16px">'
+    + '<div style="font-size:13px;font-weight:700;color:#00d4ff;margin-bottom:8px">💻 Windows PC에서도 사용 가능!</div>'
+    + '<div style="font-size:12px;color:#e8f4ff;line-height:1.7">'
+    + 'PC 브라우저(Chrome/Edge)에서 아래 주소로 접속하면<br>동일한 기능을 사용할 수 있습니다.<br>'
+    + '<div style="margin-top:8px;padding:8px 12px;background:rgba(0,0,0,0.3);border-radius:8px;font-family:monospace;font-size:13px;color:#00ff9d;word-break:break-all">'
+    + 'https://bbaggooja.github.io/gas-pipe-app/'
+    + '</div>'
+    + '<div style="font-size:10px;color:#8ab4d4;margin-top:6px">주소창의 설치 아이콘(⊕)을 클릭하면 앱처럼 설치됩니다</div>'
+    + '</div>'
+    + '</div>'
+    + '</div>'
+    + '<div style="padding:0 20px 20px;display:flex;gap:10px">'
+    + '<button onclick="copyPwaUrl()" style="flex:1;padding:12px;background:rgba(0,212,255,0.15);border:1.5px solid rgba(0,212,255,0.4);border-radius:12px;color:#00d4ff;font-weight:700;font-size:13px;cursor:pointer">📋 주소 복사</button>'
+    + '<button onclick="closeUpdatePopup()" style="flex:1;padding:12px;background:linear-gradient(135deg,#00d4ff,#0088cc);border:none;border-radius:12px;color:#fff;font-weight:700;font-size:14px;cursor:pointer">확인</button>'
+    + '</div>'
+    + '</div>';
+
+  document.body.appendChild(overlay);
+}
+
+function closeUpdatePopup() {
+  localStorage.setItem(APP_UPDATE_KEY, '1');
+  var el = document.getElementById('update-popup-overlay');
+  if (el) el.remove();
+}
+
+function copyPwaUrl() {
+  var url = 'https://bbaggooja.github.io/gas-pipe-app/';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() { snack('주소가 복사되었습니다'); });
+  } else {
+    var t = document.createElement('textarea');
+    t.value = url;
+    document.body.appendChild(t);
+    t.select();
+    document.execCommand('copy');
+    document.body.removeChild(t);
+    snack('주소가 복사되었습니다');
+  }
+}
+
+// 앱 시작 시 팝업 표시 (0.5초 후)
+window.addEventListener('load', function() {
+  setTimeout(showUpdatePopup, 500);
+});
 </script>
 </body>
 </html>
