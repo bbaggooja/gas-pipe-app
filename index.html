@@ -10545,16 +10545,37 @@ function showUpgradePrompt(featureName) {
 function firebaseLogin() {
   if (!fbAuth) { snack('서버 연결 불가 (오프라인)'); return; }
   var provider = new firebase.auth.GoogleAuthProvider();
+  // 팝업 시도, 실패 시 리다이렉트
   fbAuth.signInWithPopup(provider).then(function(result) {
-    var user = result.user;
-    LICENSE.userId = user.uid;
-    LICENSE.email = user.email;
-    snack(user.displayName + ' 로그인 완료');
-    fetchLicense(user.uid);
-    updateLoginUI();
+    handleLoginResult(result.user);
   }).catch(function(err) {
-    console.error('로그인 실패:', err);
-    snack('로그인 실패: ' + err.message);
+    console.log('팝업 로그인 실패, 리다이렉트 시도:', err.code);
+    if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user'
+        || err.code === 'auth/cancelled-popup-request' || err.code === 'auth/missing-initial-state') {
+      fbAuth.signInWithRedirect(provider);
+    } else {
+      snack('로그인 실패: ' + err.message);
+    }
+  });
+}
+
+function handleLoginResult(user) {
+  if (!user) return;
+  LICENSE.userId = user.uid;
+  LICENSE.email = user.email;
+  snack((user.displayName || user.email) + ' 로그인 완료');
+  fetchLicense(user.uid);
+  updateLoginUI();
+}
+
+// 리다이렉트 로그인 결과 처리
+if (fbAuth) {
+  fbAuth.getRedirectResult().then(function(result) {
+    if (result && result.user) {
+      handleLoginResult(result.user);
+    }
+  }).catch(function(err) {
+    console.error('리다이렉트 로그인 실패:', err);
   });
 }
 
