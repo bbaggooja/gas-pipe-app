@@ -6163,6 +6163,7 @@ function exportExplosionPdf() {
 //  방폭구역설계서 Excel(.xls) 출력 — HTML Table 방식 (안정적)
 // ============================================================
 function exportExplosionXlsx() {
+  if (!requireOutput('방폭거리 Excel')) return;
   try {
   var mw = parseFloat(document.getElementById('exp-mw').value) || 0;
   var rhoG_db = parseFloat(document.getElementById('exp-rhog').value) || 0;
