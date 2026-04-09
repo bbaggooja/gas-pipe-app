@@ -473,7 +473,7 @@ input[type=number]{-moz-appearance:textfield}
           </select>
         </div>
         <!-- 세대수 + 동시사용률 -->
-        <div class="row2" style="margin-bottom:10px">
+        <div class="row2" style="margin-bottom:6px">
           <div class="input-group">
             <label>세대수 <span class="unit">(동시사용률 자동계산)</span></label>
             <input type="number" id="seg-units" placeholder="0" min="0" step="1" oninput="updateSegSimulRate()">
@@ -481,6 +481,25 @@ input[type=number]{-moz-appearance:textfield}
           <div class="input-group">
             <label>동시사용률 <span class="unit">(%)</span></label>
             <input type="number" id="seg-simul-rate" placeholder="자동" step="1" style="color:var(--accent2);font-weight:700" readonly>
+          </div>
+        </div>
+        <!-- 동시사용률 적용 유량 표시 + 비적용 유량(상가 등) -->
+        <div id="seg-simul-info" style="display:none;margin-bottom:10px;padding:10px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:10px">
+          <div style="display:flex;gap:8px;margin-bottom:6px">
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--text3)">세대 유량 × 동시사용률</div>
+              <div id="seg-q-simul" style="font-size:13px;font-weight:700;color:#00d4ff">-</div>
+            </div>
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--text3)">비적용 유량 (상가 등)</div>
+              <input type="number" id="seg-q-extra" placeholder="0.000" step="0.001" value="0" oninput="updateTotalQ()" style="font-size:12px;padding:4px 8px;background:rgba(255,200,50,0.1);border:1px solid rgba(255,200,50,0.3);border-radius:6px;color:#ffcc32;font-weight:700;width:100%">
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08)">
+            <div style="font-size:11px;color:var(--text3)">합산 유량 =</div>
+            <div id="seg-q-total" style="font-size:14px;font-weight:800;color:#00ff9d">-</div>
+            <div style="font-size:10px;color:var(--text3)">m³/hr</div>
+            <button onclick="applyTotalQ()" style="margin-left:auto;padding:4px 12px;background:rgba(0,255,157,0.15);border:1px solid rgba(0,255,157,0.4);border-radius:6px;color:#00ff9d;font-size:11px;font-weight:700;cursor:pointer">유량에 적용</button>
           </div>
         </div>
         <div class="card-title" style="margin-bottom:8px;font-size:11px">피팅 수량</div>
@@ -2516,12 +2535,43 @@ function calcFitLen(pipeA, f) {
 function updateSegSimulRate() {
   var units = parseInt(document.getElementById('seg-units').value) || 0;
   var rateEl = document.getElementById('seg-simul-rate');
+  var infoEl = document.getElementById('seg-simul-info');
   if (units > 0) {
     var rate = calcSimulRate(units);
     rateEl.value = rate;
+    if (infoEl) infoEl.style.display = 'block';
+    updateSimulQDisplay();
   } else {
     rateEl.value = '';
+    if (infoEl) infoEl.style.display = 'none';
   }
+}
+
+function updateSimulQDisplay() {
+  var q = parseFloat(document.getElementById('seg-q').value) || 0;
+  var rate = parseFloat(document.getElementById('seg-simul-rate').value) || 0;
+  var extra = parseFloat(document.getElementById('seg-q-extra').value) || 0;
+  var qSimul = (rate > 0) ? q * rate / 100 : q;
+  var total = qSimul + extra;
+  var simulEl = document.getElementById('seg-q-simul');
+  var totalEl = document.getElementById('seg-q-total');
+  if (simulEl) simulEl.textContent = qSimul.toFixed(3) + ' m³/hr (' + q.toFixed(3) + ' × ' + rate + '%)';
+  if (totalEl) totalEl.textContent = total.toFixed(3);
+}
+
+function updateTotalQ() {
+  updateSimulQDisplay();
+}
+
+function applyTotalQ() {
+  var q = parseFloat(document.getElementById('seg-q').value) || 0;
+  var rate = parseFloat(document.getElementById('seg-simul-rate').value) || 0;
+  var extra = parseFloat(document.getElementById('seg-q-extra').value) || 0;
+  var qSimul = (rate > 0) ? q * rate / 100 : q;
+  var total = qSimul + extra;
+  document.getElementById('seg-q').value = total.toFixed(3);
+  syncKcal();
+  snack('합산 유량 ' + total.toFixed(3) + ' m³/hr 적용됨');
 }
 
 function onFormulaChange() {
@@ -2901,6 +2951,9 @@ function syncKcal() {
   if (q > 0 && cf > 0) {
     document.getElementById('seg-kcal').value = Math.round(q * cf);
   }
+  // 세대수가 입력되어 있으면 동시사용률 적용유량도 갱신
+  var units = parseInt(document.getElementById('seg-units').value) || 0;
+  if (units > 0) updateSimulQDisplay();
 }
 
 
@@ -2973,8 +3026,9 @@ function addSegment() {
   // 세대수/동시사용률
   var segUnits = parseInt(document.getElementById('seg-units').value) || 0;
   var segSimulRate = segUnits > 0 ? calcSimulRate(segUnits) : 0;
+  var segQExtra = parseFloat(document.getElementById('seg-q-extra').value) || 0;
 
-  var seg = { id: Date.now(), name:name, desc:desc, branch:branch, q:q, l:l, fittings:fittings, mat:mat, pipeOverride:pipeOverride, units:segUnits, simulRate:segSimulRate, result:null };
+  var seg = { id: Date.now(), name:name, desc:desc, branch:branch, q:q, l:l, fittings:fittings, mat:mat, pipeOverride:pipeOverride, units:segUnits, simulRate:segSimulRate, qExtra:segQExtra, result:null };
   segments.push(seg);
   recalcAll();
   renderList();
@@ -2999,8 +3053,12 @@ function clearSegForm() {
   // 세대수/동시사용률 초기화
   var unitsEl = document.getElementById('seg-units');
   var simulEl = document.getElementById('seg-simul-rate');
+  var extraEl = document.getElementById('seg-q-extra');
+  var infoEl = document.getElementById('seg-simul-info');
   if (unitsEl) unitsEl.value = '';
   if (simulEl) simulEl.value = '';
+  if (extraEl) extraEl.value = '0';
+  if (infoEl) infoEl.style.display = 'none';
 }
 
 function clearAll() {
@@ -3086,7 +3144,7 @@ function renderList() {
       + '<div class="' + iconClass + '">' + iconTxt + '</div>'
       + '<div class="seg-info">'
       + '<div class="seg-name">' + (i+1) + '. ' + s.name + '</div>'
-      + '<div class="seg-desc">' + (s.desc||'') + branchInfo + ' | Q:' + s.q + ' | L:' + s.l + 'm | ' + matLabel + (s.units > 0 ? ' | ' + s.units + '세대(' + s.simulRate + '%)' : '') + '</div>'
+      + '<div class="seg-desc">' + (s.desc||'') + branchInfo + ' | Q:' + s.q + ' | L:' + s.l + 'm | ' + matLabel + (s.units > 0 ? ' | ' + s.units + '세대(' + s.simulRate + '%)' : '') + (s.qExtra > 0 ? ' | +상가' + s.qExtra : '') + '</div>'
       + '</div>'
       + '<div class="seg-result">' + resultHtml + '</div>'
       + '</div>';
@@ -3277,6 +3335,8 @@ function showSegDetail(id) {
       + '<span class="result-badge ' + okClass + '">' + judgeText + '</span></div>'
       + '<table class="detail-table" style="margin-bottom:12px">'
       + '<tr><td>유량 Q</td><td>' + r.Q.toFixed(3) + ' m3/hr</td></tr>'
+      + (s.units > 0 ? '<tr><td>세대수</td><td>' + s.units + '세대 (동시사용률 ' + s.simulRate + '%)</td></tr>' : '')
+      + (s.qExtra > 0 ? '<tr><td>비적용 유량(상가 등)</td><td>' + s.qExtra.toFixed(3) + ' m3/hr</td></tr>' : '')
       + '<tr><td>실관길이</td><td>' + r.L_real.toFixed(2) + ' m</td></tr>'
       + '<tr><td>피팅 환산길이</td><td>' + r.L_fit.toFixed(3) + ' m</td></tr>'
       + '<tr class="highlight"><td>총 유효길이</td><td>' + r.L_eff.toFixed(3) + ' m</td></tr>'
@@ -3315,7 +3375,7 @@ function saveProject() {
   };
   for (var i = 0; i < segments.length; i++) {
     var s = segments[i];
-    data.segments.push({id:s.id,name:s.name,desc:s.desc,branch:s.branch,q:s.q,l:s.l,fittings:s.fittings,mat:s.mat,pipeOverride:s.pipeOverride||null,units:s.units||0,simulRate:s.simulRate||0});
+    data.segments.push({id:s.id,name:s.name,desc:s.desc,branch:s.branch,q:s.q,l:s.l,fittings:s.fittings,mat:s.mat,pipeOverride:s.pipeOverride||null,units:s.units||0,simulRate:s.simulRate||0,qExtra:s.qExtra||0});
   }
   var saves = JSON.parse(localStorage.getItem('gas_saves') || '[]');
   saves.unshift({id: Date.now(), name:data.name, date:data.date, siteName:data.siteName, p0:data.p0, dhAllow:data.dhAllow, convFactor:data.convFactor, segments:data.segments, usageRows:data.usageRows||[]});
