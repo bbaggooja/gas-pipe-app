@@ -3803,6 +3803,8 @@ function buildCoxSummaryTable(p0) {
   h += '<td style="' + tbd + '">' + coxR.dH_allow.toFixed(3) + '</td>';
   h += '<td style="' + tbd + '"></td><td style="' + tbd + '"></td></tr>';
   var runDH = 0;
+  var lastSimulRate = 0;
+  var lastQ_adj = 0;
   for (var i = 0; i < coxR.segs.length; i++) {
     var cs = coxR.segs[i];
     var seg = null;
@@ -3811,6 +3813,12 @@ function buildCoxSummaryTable(p0) {
     var matLabel = r ? (r.mat === 'pe' ? 'PEM' : 'S/T') : '';
     runDH += cs.dH;
     var remainP = p0 - runDH;
+    // ★ 동시사용률 계승: 본인 값 우선, 없으면 유량 동일 시 이전 값
+    var dispSimulRate = cs.simulRate;
+    if (dispSimulRate <= 0 && lastSimulRate > 0 && Math.abs(cs.Q_adj - lastQ_adj) < 0.001) {
+      dispSimulRate = lastSimulRate;
+    }
+    if (cs.simulRate > 0 || dispSimulRate > 0) { lastSimulRate = dispSimulRate; lastQ_adj = cs.Q_adj; }
     h += '<tr>';
     h += '<td style="' + tbd + ';text-align:left;font-weight:bold">' + cs.name + '</td>';
     h += '<td style="' + tbd + '">' + (r ? r.L_real.toFixed(1) : '') + '</td>';
@@ -3826,7 +3834,7 @@ function buildCoxSummaryTable(p0) {
     h += '<td style="' + tbd + '">' + remainP.toFixed(3) + '</td>';
     h += '<td style="' + tbd + '">' + cs.dH.toFixed(3) + '</td>';
     h += '<td style="' + tbd + '">' + matLabel + '</td>';
-    h += '<td style="' + tbd + ';color:#c00;font-weight:bold">' + (cs.simulRate > 0 ? cs.simulRate + '%' : '') + '</td>';
+    h += '<td style="' + tbd + ';color:#c00;font-weight:bold">' + (dispSimulRate > 0 ? dispSimulRate + '%' : '') + '</td>';
     h += '</tr>';
   }
   // 합계 행
@@ -3870,6 +3878,8 @@ function buildCoxPrintHtml(p0) {
   h += '<td colspan="2" style="' + tbd + '"></td></tr>';
 
   var runDH = 0;
+  var lastSimulRate2 = 0;
+  var lastQ_adj2 = 0;
   for (var i = 0; i < coxR.segs.length; i++) {
     var cs = coxR.segs[i];
     var seg = null;
@@ -3879,6 +3889,12 @@ function buildCoxPrintHtml(p0) {
     runDH += cs.dH;
     var remainP = p0 - runDH;
     var fq13Style = tbd + ';background:#ffff80;font-weight:bold';
+    // ★ 동시사용률 계승
+    var dispSimulRate2 = cs.simulRate;
+    if (dispSimulRate2 <= 0 && lastSimulRate2 > 0 && Math.abs(cs.Q_adj - lastQ_adj2) < 0.001) {
+      dispSimulRate2 = lastSimulRate2;
+    }
+    if (cs.simulRate > 0 || dispSimulRate2 > 0) { lastSimulRate2 = dispSimulRate2; lastQ_adj2 = cs.Q_adj; }
 
     h += '<tr>';
     h += '<td style="' + tbd + ';text-align:left;font-weight:bold">' + cs.name + '</td>';
@@ -3895,7 +3911,7 @@ function buildCoxPrintHtml(p0) {
     h += '<td style="' + tbd + '">' + remainP.toFixed(3) + '</td>';
     h += '<td style="' + tbd + '">' + cs.dH.toFixed(3) + '</td>';
     h += '<td style="' + tbd + '">' + matLabel + '</td>';
-    h += '<td style="' + tbd + ';color:#c00;font-weight:bold">' + (cs.simulRate > 0 ? cs.simulRate + '%' : '') + '</td>';
+    h += '<td style="' + tbd + ';color:#c00;font-weight:bold">' + (dispSimulRate2 > 0 ? dispSimulRate2 + '%' : '') + '</td>';
     h += '</tr>';
   }
 
