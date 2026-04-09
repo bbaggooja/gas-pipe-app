@@ -2570,8 +2570,13 @@ function applyTotalQ() {
   var qSimul = (rate > 0) ? q * rate / 100 : q;
   var total = qSimul + extra;
   document.getElementById('seg-q').value = total.toFixed(3);
+  // ★ 유량에 이미 동시사용률이 적용되었으므로 세대수/동시사용률은 0으로 리셋
+  // (Cox식에서 이중 적용 방지)
+  document.getElementById('seg-units').value = '';
+  document.getElementById('seg-simul-rate').value = '';
+  document.getElementById('seg-simul-info').style.display = 'none';
   syncKcal();
-  snack('합산 유량 ' + total.toFixed(3) + ' m³/hr 적용됨');
+  snack('합산 유량 ' + total.toFixed(3) + ' m³/hr 적용 (동시사용률 ' + rate + '% + 비적용 ' + extra.toFixed(3) + ')');
 }
 
 function onFormulaChange() {
@@ -3578,6 +3583,8 @@ function buildPrintHtml() {
       // Q, L 라인
       + '<div style="margin-left:20px;margin-bottom:6px;font-size:12px">'
       + '<b>Q =</b> ' + r.Q.toFixed(3) + ' ㎥/hr'
+      + (s.units > 0 ? '&nbsp;&nbsp;<span style="color:#c00;font-size:11px">(세대수: ' + s.units + ', 동시사용률: ' + s.simulRate + '%)</span>' : '')
+      + (s.qExtra > 0 ? '&nbsp;&nbsp;<span style="color:#886600;font-size:11px">(비적용유량: +' + s.qExtra.toFixed(3) + ')</span>' : '')
       + '</div>'
       + '<div style="margin-left:20px;margin-bottom:10px;font-size:12px">'
       + '<b>L =</b> ' + r.L_real.toFixed(2) + ' m + ' + r.L_fit.toFixed(2) + ' m (피팅류환산길이) = <b>' + r.L_eff.toFixed(2) + '</b> m'
@@ -3712,6 +3719,7 @@ function buildPrintHtml() {
     + '.meta{color:#555;font-size:11px;margin-bottom:20px}'
     + 'table{border-collapse:collapse}'
     + 'sup{font-size:9px}'
+    + '@page{margin:10mm 12mm;size:A4}'
     + '@media print{'
     + '  .no-print{display:none}'
     + '  body{margin:10px 16px}'
@@ -3801,7 +3809,7 @@ function buildCoxSummaryTable(p0) {
     h += '<td style="' + tbd + '">' + remainP.toFixed(3) + '</td>';
     h += '<td style="' + tbd + '">' + cs.dH.toFixed(3) + '</td>';
     h += '<td style="' + tbd + '">' + matLabel + '</td>';
-    h += '<td style="' + tbd + '"></td>';
+    h += '<td style="' + tbd + ';color:#c00;font-weight:bold">' + (cs.simulRate > 0 ? cs.simulRate + '%' : '') + '</td>';
     h += '</tr>';
   }
   // 합계 행
@@ -5660,6 +5668,7 @@ function exportExplosionPdf() {
   // ─── CSS ───
   var css = [
     'body{font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;margin:0;padding:0;color:#000;font-size:10px;line-height:1.3}',
+    '@page{margin:10mm 12mm}',
     '@page landscape-page{size:A4 landscape;margin:10mm 12mm}',
     '@page portrait-page{size:A4 portrait;margin:10mm 12mm}',
     '.landscape-section{page:landscape-page;padding:20px 25px}',
