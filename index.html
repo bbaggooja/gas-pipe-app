@@ -2563,20 +2563,25 @@ function updateTotalQ() {
   updateSimulQDisplay();
 }
 
+// ★ 적용된 동시사용률 기록용 (유량에 적용 후에도 PDF 표시용으로 보존)
+var _appliedSimulInfo = { units: 0, simulRate: 0, qExtra: 0 };
+
 function applyTotalQ() {
   var q = parseFloat(document.getElementById('seg-q').value) || 0;
   var rate = parseFloat(document.getElementById('seg-simul-rate').value) || 0;
+  var units = parseInt(document.getElementById('seg-units').value) || 0;
   var extra = parseFloat(document.getElementById('seg-q-extra').value) || 0;
   var qSimul = (rate > 0) ? q * rate / 100 : q;
   var total = qSimul + extra;
+  // ★ 적용 정보 보존 (구간 추가 시 segment에 기록됨)
+  _appliedSimulInfo = { units: units, simulRate: rate, qExtra: extra };
   document.getElementById('seg-q').value = total.toFixed(3);
-  // ★ 유량에 이미 동시사용률이 적용되었으므로 세대수/동시사용률은 0으로 리셋
-  // (Cox식에서 이중 적용 방지)
+  // 세대수/동시사용률 리셋 (Cox식 이중적용 방지)
   document.getElementById('seg-units').value = '';
   document.getElementById('seg-simul-rate').value = '';
   document.getElementById('seg-simul-info').style.display = 'none';
   syncKcal();
-  snack('합산 유량 ' + total.toFixed(3) + ' m³/hr 적용 (동시사용률 ' + rate + '% + 비적용 ' + extra.toFixed(3) + ')');
+  snack('합산 유량 ' + total.toFixed(3) + ' m³/hr (동시사용률 ' + rate + '% 적용)');
 }
 
 function onFormulaChange() {
@@ -2631,10 +2636,10 @@ function calcCoxMulti() {
     var s = allSegs[i];
     var r = s.result;
     if (!r) continue;
-    // 동시사용률이 있으면 유량에 적용
     var Q = r.Q;
-    var simulR = (s.simulRate > 0) ? s.simulRate / 100 : 1;
-    var Q_adj = Q * simulR; // 동시사용률 적용 유량
+    // ★ simulApplied=true면 Q에 이미 동시사용률 포함 → 다시 곱하지 않음
+    var simulR = (s.simulRate > 0 && !s.simulApplied) ? s.simulRate / 100 : 1;
+    var Q_adj = Q * simulR;
     var L_eff = r.L_eff;
     var Q13 = Math.pow(Q_adj, 1/3);
     var LQ13 = L_eff * Q13;
@@ -2642,7 +2647,8 @@ function calcCoxMulti() {
     segsData.push({
       name: s.name, Q: Q, Q_adj: Q_adj, L_eff: L_eff, Q13: Q13, LQ13: LQ13,
       isBranch: !!s.branch, mat: r.mat,
-      units: s.units || 0, simulRate: s.simulRate || 0
+      units: s.units || 0, simulRate: s.simulRate || 0,
+      simulApplied: s.simulApplied || false, qExtra: s.qExtra || 0
     });
   }
 
@@ -3033,7 +3039,18 @@ function addSegment() {
   var segSimulRate = segUnits > 0 ? calcSimulRate(segUnits) : 0;
   var segQExtra = parseFloat(document.getElementById('seg-q-extra').value) || 0;
 
-  var seg = { id: Date.now(), name:name, desc:desc, branch:branch, q:q, l:l, fittings:fittings, mat:mat, pipeOverride:pipeOverride, units:segUnits, simulRate:segSimulRate, qExtra:segQExtra, result:null };
+  // ★ "유량에 적용" 버튼으로 합산한 경우, 원래 동시사용률 정보를 보존
+  var simulApplied = false;
+  if (segUnits === 0 && _appliedSimulInfo.simulRate > 0) {
+    segUnits = _appliedSimulInfo.units;
+    segSimulRate = _appliedSimulInfo.simulRate;
+    segQExtra = _appliedSimulInfo.qExtra;
+    simulApplied = true; // ★ Q에 이미 동시사용률이 반영됨
+  }
+  // 적용 정보 초기화
+  _appliedSimulInfo = { units: 0, simulRate: 0, qExtra: 0 };
+
+  var seg = { id: Date.now(), name:name, desc:desc, branch:branch, q:q, l:l, fittings:fittings, mat:mat, pipeOverride:pipeOverride, units:segUnits, simulRate:segSimulRate, qExtra:segQExtra, simulApplied:simulApplied, result:null };
   segments.push(seg);
   recalcAll();
   renderList();
@@ -3380,7 +3397,7 @@ function saveProject() {
   };
   for (var i = 0; i < segments.length; i++) {
     var s = segments[i];
-    data.segments.push({id:s.id,name:s.name,desc:s.desc,branch:s.branch,q:s.q,l:s.l,fittings:s.fittings,mat:s.mat,pipeOverride:s.pipeOverride||null,units:s.units||0,simulRate:s.simulRate||0,qExtra:s.qExtra||0});
+    data.segments.push({id:s.id,name:s.name,desc:s.desc,branch:s.branch,q:s.q,l:s.l,fittings:s.fittings,mat:s.mat,pipeOverride:s.pipeOverride||null,units:s.units||0,simulRate:s.simulRate||0,qExtra:s.qExtra||0,simulApplied:s.simulApplied||false});
   }
   var saves = JSON.parse(localStorage.getItem('gas_saves') || '[]');
   saves.unshift({id: Date.now(), name:data.name, date:data.date, siteName:data.siteName, p0:data.p0, dhAllow:data.dhAllow, convFactor:data.convFactor, segments:data.segments, usageRows:data.usageRows||[]});
