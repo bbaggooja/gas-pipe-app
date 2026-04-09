@@ -10548,29 +10548,30 @@ function showUpgradePrompt(featureName) {
 
 // ══════════════════════════════════
 //  Firebase 인증 (Google 로그인)
-//  Android WebView: Bridge 경유
-//  웹 브라우저: 팝업 → 리다이렉트 폴백
+//  Android: Bridge → 네이티브 Google Sign-In
+//  웹: 팝업 전용 (리다이렉트 사용 안 함)
 // ══════════════════════════════════
 function firebaseLogin() {
   if (!fbAuth) { snack('서버 연결 불가 (오프라인)'); return; }
 
-  // ★ Android 앱 환경: Bridge로 Google Sign-In 요청
+  // ★ Android 앱: 네이티브 Google Sign-In
   if (typeof AndroidBridge !== 'undefined' && AndroidBridge.googleSignIn) {
     AndroidBridge.googleSignIn();
     return;
   }
 
-  // ★ 웹 브라우저 환경: 팝업 시도 → 실패 시 리다이렉트
+  // ★ 웹 브라우저: 팝업만 사용
   var provider = new firebase.auth.GoogleAuthProvider();
   fbAuth.signInWithPopup(provider).then(function(result) {
     handleLoginResult(result.user);
   }).catch(function(err) {
-    console.log('팝업 로그인 실패:', err.code);
-    if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user'
-        || err.code === 'auth/cancelled-popup-request') {
-      fbAuth.signInWithRedirect(provider);
+    console.error('로그인 실패:', err.code, err.message);
+    if (err.code === 'auth/popup-closed-by-user') {
+      snack('로그인 창을 닫았습니다');
+    } else if (err.code === 'auth/popup-blocked') {
+      snack('팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요');
     } else {
-      snack('로그인 실패: ' + err.message);
+      snack('로그인 실패: ' + (err.message || err.code));
     }
   });
 }
@@ -10584,7 +10585,7 @@ function handleLoginResult(user) {
   updateLoginUI();
 }
 
-// ★ Android Bridge 콜백 — Google Sign-In 결과 수신
+// ★ Android Bridge 콜백 — 네이티브 Google Sign-In 결과
 window.onGoogleSignInResult = function(idToken) {
   if (!fbAuth || !idToken) { snack('로그인 실패'); return; }
   var credential = firebase.auth.GoogleAuthProvider.credential(idToken);
@@ -10595,19 +10596,6 @@ window.onGoogleSignInResult = function(idToken) {
     snack('인증 실패: ' + err.message);
   });
 };
-
-// 웹 브라우저: 리다이렉트 로그인 결과 처리
-if (fbAuth) {
-  fbAuth.getRedirectResult().then(function(result) {
-    if (result && result.user) {
-      handleLoginResult(result.user);
-    }
-  }).catch(function(err) {
-    if (err.code !== 'auth/missing-initial-state') {
-      console.error('리다이렉트 로그인 실패:', err);
-    }
-  });
-}
 
 function firebaseLogout() {
   if (!fbAuth) return;
