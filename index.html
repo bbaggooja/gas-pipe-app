@@ -2111,8 +2111,13 @@ input[type=number]{-moz-appearance:textfield}
     </div>
 
     <div style="text-align:center;color:var(--text3);font-size:10px;padding:10px 0 24px">
-      Gas Pipe Sizing Calculator v2.7<br>
-      © 2026 All rights reserved.
+      Gas Pipe Sizing Calculator v2.9.1<br>
+      © 2026 All rights reserved.<br><br>
+      <div style="margin-top:8px;padding:10px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:10px">
+        <div style="font-size:11px;font-weight:700;color:#00d4ff;margin-bottom:4px">💻 Windows PC 웹 버전</div>
+        <div style="font-size:12px;font-family:monospace;color:#00ff9d;word-break:break-all">https://bbaggooja.github.io/gas-pipe-app/</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">PC 브라우저에서 접속 → 설치 아이콘(⊕) 클릭하여 앱으로 사용</div>
+      </div>
     </div>
   </div>
 </div>
@@ -10618,8 +10623,16 @@ function requireOutput(featureName) {
   }
   // ★ 로그인 확인 (테스트/정식 모두 필수)
   if (!LICENSE.userId) {
-    if (confirm(featureName + ' 기능을 사용하려면 로그인이 필요합니다.\n\n로그인하시겠습니까?')) {
-      firebaseLogin();
+    var isAndroid = typeof AndroidBridge !== 'undefined';
+    if (isAndroid) {
+      if (confirm(featureName + ' 기능을 사용하려면 로그인이 필요합니다.\n\n로그인하시겠습니까?')) {
+        firebaseLogin();
+      }
+    } else {
+      // Windows/웹: 로그인 유도
+      if (confirm(featureName + ' 기능을 사용하려면 로그인이 필요합니다.\n\nAndroid 앱에서 로그인 후\n동일 Google 계정으로 여기서도 로그인하세요.\n\n로그인하시겠습니까?')) {
+        firebaseLogin();
+      }
     }
     return false;
   }
@@ -10799,17 +10812,23 @@ window.addEventListener('load', function() { updateLoginUI(); });
 // ══════════════════════════════════
 var APP_VERSION = '2.9.1';
 var APP_UPDATE_KEY = 'app_update_seen_' + APP_VERSION;
+var APP_TODAY_KEY = 'app_update_today_';
 
 function showUpdatePopup() {
-  // 이미 본 버전이면 표시 안 함
+  // 버전별 영구 닫기 확인
   if (localStorage.getItem(APP_UPDATE_KEY)) return;
+  // 오늘 그만 보기 확인
+  var todayStr = new Date().toISOString().slice(0,10);
+  if (localStorage.getItem(APP_TODAY_KEY + todayStr)) return;
 
   var overlay = document.createElement('div');
   overlay.id = 'update-popup-overlay';
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
 
   overlay.innerHTML = ''
-    + '<div style="background:linear-gradient(135deg,#0f2240,#1a3a6e);border:1.5px solid rgba(0,212,255,0.3);border-radius:18px;max-width:420px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.6)">'
+    + '<div style="background:linear-gradient(135deg,#0f2240,#1a3a6e);border:1.5px solid rgba(0,212,255,0.3);border-radius:18px;max-width:420px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.6);position:relative">'
+    // ★ X 닫기 버튼 (우측 상단)
+    + '<button onclick="closeUpdatePopup(false)" style="position:absolute;top:10px;right:14px;background:none;border:none;color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer;z-index:1;padding:4px">✕</button>'
     + '<div style="padding:20px 20px 0">'
     + '<div style="text-align:center;margin-bottom:12px">'
     + '<div style="font-size:36px;margin-bottom:4px">🔧</div>'
@@ -10845,17 +10864,32 @@ function showUpdatePopup() {
     + '</div>'
     + '</div>'
     + '</div>'
-    + '<div style="padding:0 20px 20px;display:flex;gap:10px">'
+    // ★ 하단: 오늘 그만 보기 + 버튼들
+    + '<div style="padding:0 20px 16px">'
+    + '<label style="display:flex;align-items:center;gap:6px;margin-bottom:12px;cursor:pointer;font-size:11px;color:#8ab4d4">'
+    + '<input type="checkbox" id="chk-today-dismiss" style="width:16px;height:16px;accent-color:#00d4ff"> 오늘 그만 보기'
+    + '</label>'
+    + '<div style="display:flex;gap:10px">'
     + '<button onclick="copyPwaUrl()" style="flex:1;padding:12px;background:rgba(0,212,255,0.15);border:1.5px solid rgba(0,212,255,0.4);border-radius:12px;color:#00d4ff;font-weight:700;font-size:13px;cursor:pointer">📋 주소 복사</button>'
-    + '<button onclick="closeUpdatePopup()" style="flex:1;padding:12px;background:linear-gradient(135deg,#00d4ff,#0088cc);border:none;border-radius:12px;color:#fff;font-weight:700;font-size:14px;cursor:pointer">확인</button>'
+    + '<button onclick="closeUpdatePopup(true)" style="flex:1;padding:12px;background:linear-gradient(135deg,#00d4ff,#0088cc);border:none;border-radius:12px;color:#fff;font-weight:700;font-size:14px;cursor:pointer">확인</button>'
+    + '</div>'
     + '</div>'
     + '</div>';
 
   document.body.appendChild(overlay);
 }
 
-function closeUpdatePopup() {
-  localStorage.setItem(APP_UPDATE_KEY, '1');
+function closeUpdatePopup(permanent) {
+  // "확인" 버튼 → 이 버전은 다시 안 보임
+  if (permanent) {
+    localStorage.setItem(APP_UPDATE_KEY, '1');
+  }
+  // "오늘 그만 보기" 체크 시
+  var chk = document.getElementById('chk-today-dismiss');
+  if (chk && chk.checked) {
+    var todayStr = new Date().toISOString().slice(0,10);
+    localStorage.setItem(APP_TODAY_KEY + todayStr, '1');
+  }
   var el = document.getElementById('update-popup-overlay');
   if (el) el.remove();
 }
