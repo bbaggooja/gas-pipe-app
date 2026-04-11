@@ -700,7 +700,10 @@ input[type=number]{-moz-appearance:textfield}
     <!-- 헤더 -->
     <div style="background:linear-gradient(135deg,#1a1500,#3d2000);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid rgba(255,107,53,0.4);position:sticky;top:0;z-index:10">
       <div style="font-size:14px;font-weight:700;color:#ff9f7f">🔥 LPG 사용량 계산</div>
-      <button onclick="closeLpgCalc()" style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.4);border-radius:8px;color:#ff9f7f;font-size:13px;font-weight:700;cursor:pointer;padding:7px 14px">✕ 닫기</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button onclick="resetLpgCalc()" style="background:rgba(255,100,100,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:6px;color:#ff6666;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px">초기화</button>
+        <button onclick="closeLpgCalc()" style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.4);border-radius:8px;color:#ff9f7f;font-size:13px;font-weight:700;cursor:pointer;padding:7px 14px">✕ 닫기</button>
+      </div>
     </div>
     <div style="padding:22px 14px 28px;display:flex;flex-direction:column;gap:12px">
 
@@ -1069,7 +1072,10 @@ input[type=number]{-moz-appearance:textfield}
   <div style="background:var(--bg2);border:1px solid rgba(0,180,255,0.3);border-radius:16px;width:100%;max-width:540px;overflow:hidden;margin:auto">
     <div style="background:linear-gradient(135deg,#001a30,#003050);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,180,255,0.25)">
       <div style="font-size:14px;font-weight:700;color:#7dd8ff">🔬 기밀시험 내용적 및 유지시간 계산</div>
-      <button onclick="closeLeakTest()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:2px 6px">✕</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button onclick="resetLeakTest()" style="background:rgba(255,100,100,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:6px;color:#ff6666;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px">초기화</button>
+        <button onclick="closeLeakTest()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:2px 6px">✕</button>
+      </div>
     </div>
     <div style="padding:22px 14px 28px;display:flex;flex-direction:column;gap:12px">
 
@@ -4046,6 +4052,27 @@ function closeLpgCalc() {
   document.getElementById('modal-lpg').style.display = 'none';
   goHome();
 }
+function resetLpgCalc() {
+  if (!confirm('LPG 사용량 데이터를 초기화하시겠습니까?')) return;
+  lpgState.type = 'propane';
+  lpgState.density = 0.472;
+  lpgState.useType = 'home';
+  lpgState.useHrCustom = 5;
+  lpgState.appliances = [{name:'보일러', kcal:10000, qty:1}, {name:'레인지', kcal:5000, qty:1}];
+  document.getElementById('lpg-type-propane').classList.add('active-type');
+  document.getElementById('lpg-type-butane').classList.remove('active-type');
+  // 탱크 입력값 초기화
+  var resetFields = {'lpg-use-hr':'5','lpg-tank-cap':'999.79','lpg-tank-qty':'4','lpg-residual':'30'};
+  for (var id in resetFields) {
+    var el = document.getElementById(id);
+    if (el) el.value = resetFields[id];
+  }
+  var vl = document.getElementById('lpg-v-liter');
+  if (vl) vl.value = '';
+  renderLpgAppliances();
+  calcLpg();
+  snack('LPG 사용량 초기화 완료');
+}
 function setLpgType(t) {
   lpgState.type = t;
   lpgState.density = (t === 'propane') ? 0.472 : 0.540;
@@ -4432,6 +4459,27 @@ function calcN2() {
 function closeLeakTest() {
   document.getElementById('modal-leak').style.display = 'none';
   goHome();
+}
+
+// ★ 기밀시험 초기화
+function resetLeakTest() {
+  if (!confirm('기밀시험 데이터를 초기화하시겠습니까?')) return;
+  ltRows = [];
+  ltNextId = 1;
+  document.getElementById('lt-custom-press').value = '2.0';
+  document.getElementById('lt-total-vol').textContent = '0.000';
+  document.getElementById('lt-result-time').textContent = '—';
+  var noteEl = document.getElementById('lt-result-note');
+  if (noteEl) noteEl.textContent = '';
+  var n2box = document.getElementById('n2-result-box');
+  if (n2box) n2box.style.display = 'none';
+  var n2vol = document.getElementById('n2-volume');
+  var n2prs = document.getElementById('n2-pressure');
+  if (n2vol) n2vol.value = '';
+  if (n2prs) n2prs.value = '';
+  ltCalcTestPressure();
+  ltRenderRows();
+  snack('기밀시험 초기화 완료');
 }
 
 function ltCalcTestPressure() {
@@ -8662,16 +8710,16 @@ function calcPoolEvap() {
 // ============================================================
 var docWriterData = {
   // 시공사 정보 (기본값 — 수정 가능)
-  company: '(유)그린에너지',
-  companyAddr: '전남 목포시 영산로 768',
-  companyTel: '061-278-0660',
-  companyFax: '061-278-0661',
-  companyReg: '목포 제2004-27-1',
-  ceoName: '이 주 형',
-  managerName: '김 경 민',
-  managerCert: '가스산업기사',
-  managerCertNo: 'A1180189471',
-  managerTel: '010-2094-0463',
+  company: '시공사명 입력',
+  companyAddr: '주소 입력',
+  companyTel: '000-000-0000',
+  companyFax: '000-000-0000',
+  companyReg: '등록번호 입력',
+  ceoName: '대표자명 입력',
+  managerName: '시공관리자명 입력',
+  managerCert: '자격종목 입력',
+  managerCertNo: '자격번호 입력',
+  managerTel: '010-0000-0000',
   // 공사 정보 (매번 입력)
   projectName: '',
   owner: '',
@@ -8681,7 +8729,7 @@ var docWriterData = {
   addrRoad: '',
   pressure: 2.5,
   // 수신처
-  receiver: 'MC에너지㈜',
+  receiver: '수신처 입력',
 };
 
 function openDocWriter() {
@@ -10370,22 +10418,22 @@ function dwProcessTemplate() {
       </div>
       <div id="dw-company-detail" style="display:none;margin-top:8px">
         <div class="row2">
-          <div class="input-group"><label>상호</label><input type="text" id="dw-company" value="(유)그린에너지"></div>
-          <div class="input-group"><label>대표자</label><input type="text" id="dw-ceoName" value="이 주 형"></div>
+          <div class="input-group"><label>상호</label><input type="text" id="dw-company" value="시공사명 입력"></div>
+          <div class="input-group"><label>대표자</label><input type="text" id="dw-ceoName" value="대표자명 입력"></div>
         </div>
-        <div class="input-group"><label>주소</label><input type="text" id="dw-companyAddr" value="전남 목포시 영산로 768"></div>
+        <div class="input-group"><label>주소</label><input type="text" id="dw-companyAddr" value="주소 입력"></div>
         <div class="row2">
-          <div class="input-group"><label>전화</label><input type="tel" id="dw-companyTel" value="061-278-0660"></div>
-          <div class="input-group"><label>팩스</label><input type="tel" id="dw-companyFax" value="061-278-0661"></div>
+          <div class="input-group"><label>전화</label><input type="tel" id="dw-companyTel" value="000-000-0000"></div>
+          <div class="input-group"><label>팩스</label><input type="tel" id="dw-companyFax" value="000-000-0000"></div>
         </div>
-        <div class="input-group"><label>등록번호</label><input type="text" id="dw-companyReg" value="목포 제2004-27-1"></div>
+        <div class="input-group"><label>등록번호</label><input type="text" id="dw-companyReg" value="등록번호 입력"></div>
         <div class="row2">
-          <div class="input-group"><label>시공관리자</label><input type="text" id="dw-managerName" value="김 경 민"></div>
-          <div class="input-group"><label>연락처</label><input type="tel" id="dw-managerTel" value="010-2094-0463"></div>
+          <div class="input-group"><label>시공관리자</label><input type="text" id="dw-managerName" value="시공관리자명 입력"></div>
+          <div class="input-group"><label>연락처</label><input type="tel" id="dw-managerTel" value="010-0000-0000"></div>
         </div>
         <div class="row2">
-          <div class="input-group"><label>자격종목</label><input type="text" id="dw-managerCert" value="가스산업기사"></div>
-          <div class="input-group"><label>자격번호</label><input type="text" id="dw-managerCertNo" value="A1180189471"></div>
+          <div class="input-group"><label>자격종목</label><input type="text" id="dw-managerCert" value="자격종목 입력"></div>
+          <div class="input-group"><label>자격번호</label><input type="text" id="dw-managerCertNo" value="자격번호 입력"></div>
         </div>
       </div>
     </div>
