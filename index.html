@@ -285,12 +285,23 @@ input[type=number]{-moz-appearance:textfield}
         <div class="row2">
           <div class="input-group">
             <label>공급 압력 P0 <span class="unit">(kPa)</span></label>
-            <input type="number" id="p0" value="2.3" step="0.001">
+            <input type="number" id="p0" value="2.3" step="0.001" oninput="updateDhAllow()">
           </div>
           <div class="input-group">
             <label>허용 압강하 <span class="unit">(kPa)</span></label>
-            <input type="number" id="dh-allow" value="0.15" step="0.001">
+            <input type="number" id="dh-allow" value="0.15" step="0.001" readonly style="background:rgba(255,255,255,0.05)">
           </div>
+        </div>
+        <!-- 정압기/조정기 체크 -->
+        <div style="margin:6px 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="checkbox" id="chk-regulator" onchange="updateDhAllow()" style="width:16px;height:16px;accent-color:#00d4ff">
+            정압기/조정기 설치
+          </label>
+          <span style="font-size:11px;color:var(--text3)">배율</span>
+          <input type="number" id="dh-multiplier" value="2" min="1" max="10" step="0.1" oninput="updateDhAllow()" style="width:50px;font-size:12px;padding:3px 6px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);border-radius:6px;color:#00d4ff;font-weight:700;text-align:center">
+          <span style="font-size:11px;color:var(--text3)">배</span>
+          <span id="dh-allow-info" style="font-size:10px;color:var(--text3)"></span>
         </div>
         <div id="weymouth-params" style="display:none;margin-top:10px;padding:10px;background:rgba(255,107,53,0.07);border:1px solid rgba(255,107,53,0.3);border-radius:10px">
           <div style="font-size:11px;font-weight:700;color:var(--accent3);margin-bottom:8px">Weymouth 식 파라미터 (중·고압)</div>
@@ -2987,6 +2998,74 @@ function syncKcal() {
 function getDHAllow() { return parseFloat(document.getElementById('dh-allow').value) || 0.15; }
 function getConvFactor() { return parseFloat(document.getElementById('conv-factor').value) || 10145; }
 
+// ★ 허용 압강하 자동계산
+function updateDhAllow() {
+  var p0 = parseFloat(document.getElementById('p0').value) || 2.3;
+  var chk = document.getElementById('chk-regulator').checked;
+  var mult = parseFloat(document.getElementById('dh-multiplier').value) || 2;
+  var dh, info;
+  if (p0 >= 10) {
+    dh = p0 * 0.6 * 0.1;
+    if (chk) { dh = dh * mult; info = 'P0×0.6(비중)×10%×' + mult + '배 = ' + dh.toFixed(3) + ' kPa'; }
+    else { info = 'P0×0.6(비중)×10% = ' + dh.toFixed(3) + ' kPa'; }
+  } else {
+    dh = 0.15;
+    if (chk) { dh = dh * mult; info = '0.15×' + mult + '배 = ' + dh.toFixed(3) + ' kPa'; }
+    else { info = '기본 0.15 kPa'; }
+  }
+  document.getElementById('dh-allow').value = dh.toFixed(3);
+  document.getElementById('dh-allow-info').textContent = info;
+  recalcAll();
+}
+
+// ★ 구간 수정 기능
+function editSegment(id) {
+  var seg = null, idx = -1;
+  for (var i = 0; i < segments.length; i++) {
+    if (segments[i].id === id) { seg = segments[i]; idx = i; break; }
+  }
+  if (!seg) return;
+  // 폼에 기존 값 채우기
+  document.getElementById('seg-name').value = seg.name;
+  document.getElementById('seg-desc').value = seg.desc || '';
+  document.getElementById('seg-branch').value = seg.branch || '';
+  document.getElementById('seg-q').value = seg.q;
+  document.getElementById('seg-kcal').value = Math.round(seg.q * getConvFactor());
+  document.getElementById('seg-l').value = seg.l;
+  document.getElementById('seg-mat').value = seg.mat;
+  // 관경 수동선택
+  var ov = document.getElementById('seg-pipe-override');
+  if (ov) {
+    if (seg.pipeOverride) ov.value = seg.mat + '-' + seg.pipeOverride.a;
+    else ov.value = '';
+  }
+  // 세대수/동시사용률
+  var unitsEl = document.getElementById('seg-units');
+  var simulEl = document.getElementById('seg-simul-rate');
+  var extraEl = document.getElementById('seg-q-extra');
+  var infoEl = document.getElementById('seg-simul-info');
+  if (unitsEl) unitsEl.value = seg.units || '';
+  if (simulEl) simulEl.value = seg.simulRate || '';
+  if (extraEl) extraEl.value = seg.qExtra || 0;
+  if (infoEl) infoEl.style.display = (seg.units > 0) ? 'block' : 'none';
+  if (seg.units > 0) updateSimulQDisplay();
+  // 피팅
+  var fids = ['f-valve','f-elbow90','f-elbow45','f-tee','f-tee14','f-red34','f-tee12','f-reducer'];
+  var fkeys = ['valve','e90','e45','tee','tee14','red34','tee12','reducer'];
+  for (var j = 0; j < fids.length; j++) {
+    document.getElementById(fids[j]).value = seg.fittings[fkeys[j]] || 0;
+  }
+  // 기존 구간 삭제
+  segments.splice(idx, 1);
+  recalcAll();
+  renderList();
+  renderResult();
+  updateBadge();
+  // 탭을 구간입력으로 전환
+  showTab('input', document.getElementById('tab-input'));
+  snack(seg.name + ' 구간을 수정합니다. 수정 후 [구간 추가]를 눌러주세요');
+}
+
 function getInitPressure(branchFrom, idx) {
   if (branchFrom && branchFrom.trim()) {
     for (var i = 0; i < segments.length; i++) {
@@ -3388,6 +3467,7 @@ function showSegDetail(id) {
     + '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">피팅 입력값</div>'
     + '<table class="detail-table" style="margin-bottom:14px">' + fitRows + '</table>'
     + '<div class="btn-row">'
+    + '<button class="btn btn-sm" style="background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.4);color:#00d4ff" onclick="editSegment(' + id + ');closeModal(\'modal-seg\')">수정</button>'
     + '<button class="btn btn-danger btn-sm" onclick="deleteSegment(' + id + ');closeModal(\'modal-seg\')">삭제</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="closeModal(\'modal-seg\')">닫기</button>'
     + '</div>';
