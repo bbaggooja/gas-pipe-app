@@ -4836,15 +4836,25 @@ function expBilinear(gas, pressAbs, holeMm2) {
 }
 
 // 누출특성(Releaseproperty) → 거리 보간
+// ★ 위험거리 직접 공식 계산 (r = k × √(누출특성))
+// KGS GC101 / IEC 60079-10-1 기반
+var EXP_DIST_COEFF = {
+  heavy: 8.9443,     // 중질가스(Heavy)
+  diffusive: 4.4721, // 확산성제트(Diffusive)
+  jet: 2.2361        // 제트(Jet)
+};
+
+function expCalcDistance(relProp, type) {
+  var k = EXP_DIST_COEFF[type] || EXP_DIST_COEFF.diffusive;
+  return k * Math.sqrt(Math.max(0, relProp));
+}
+
+// 기존 호환용 — 테이블 배열로 호출하는 곳 지원
 function expReleaseToDistance(relProp, distArr) {
-  var rp = EXP_RELEASE_PROP;
-  relProp = Math.max(rp[0], Math.min(rp[rp.length-1], relProp));
-  for (var i = 0; i < rp.length - 1; i++) {
-    if (relProp >= rp[i] && relProp <= rp[i+1]) {
-      return expLogLerp(rp[i], rp[i+1], distArr[i], distArr[i+1], relProp);
-    }
-  }
-  return distArr[distArr.length-1];
+  // 어떤 테이블인지 판별하여 직접 공식 사용
+  if (distArr === EXP_DIST_HEAVY) return expCalcDistance(relProp, 'heavy');
+  if (distArr === EXP_DIST_JET) return expCalcDistance(relProp, 'jet');
+  return expCalcDistance(relProp, 'diffusive');
 }
 
 // 누출량 계산 (음속/아음속)
@@ -5632,7 +5642,7 @@ function exportExplosionPdf() {
   var rD = expReleaseToDistance(relProp, EXP_DIST_DIFF);
   var rJ = expReleaseToDistance(relProp, EXP_DIST_JET);
 
-  function ru05(v) { return Math.round(v * 100) / 100; }
+  function ru05(v) { return Math.ceil(v * 20) / 20; }
 
   var Pa = 101325;
   var critP = Pa * Math.pow((gamma + 1) / 2, gamma / (gamma - 1));
@@ -6107,14 +6117,15 @@ function exportExplosionPdf() {
     // 등록된 rV/rH가 있으면 그 값 사용, 없으면 선택 타입으로 결정
     var rRound = (s.rV > 0) ? s.rV : (s.rH > 0) ? s.rH : 0;
     var gasType;
-    var tolerance = 0.005;
-    if (rRound > 0 && Math.abs(rRound - Math.round(srcRH*100)/100) < tolerance) gasType = '중질가스(Heavy)';
-    else if (rRound > 0 && Math.abs(rRound - Math.round(srcRJ*100)/100) < tolerance) gasType = '제트(Jet)';
-    else if (rRound > 0 && Math.abs(rRound - Math.round(srcRD*100)/100) < tolerance) gasType = '확산성제트(Diffusive)';
+    var tolerance = 0.03;
+    var ru = function(v) { return Math.ceil(v * 20) / 20; };
+    if (rRound > 0 && Math.abs(rRound - ru(srcRH)) < tolerance) gasType = '중질가스(Heavy)';
+    else if (rRound > 0 && Math.abs(rRound - ru(srcRJ)) < tolerance) gasType = '제트(Jet)';
+    else if (rRound > 0 && Math.abs(rRound - ru(srcRD)) < tolerance) gasType = '확산성제트(Diffusive)';
     else {
-      if (expSelectedDistType === 'heavy') { gasType = '중질가스(Heavy)'; rRound = Math.round(srcRH*100)/100; }
-      else if (expSelectedDistType === 'jet') { gasType = '제트(Jet)'; rRound = Math.round(srcRJ*100)/100; }
-      else { gasType = '확산성제트(Diffusive)'; rRound = Math.round(srcRD*100)/100; }
+      if (expSelectedDistType === 'heavy') { gasType = '중질가스(Heavy)'; rRound = ru(srcRH); }
+      else if (expSelectedDistType === 'jet') { gasType = '제트(Jet)'; rRound = ru(srcRJ); }
+      else { gasType = '확산성제트(Diffusive)'; rRound = ru(srcRD); }
     }
     var rRaw = (gasType.indexOf('중질') >= 0) ? srcRH : (gasType.indexOf('제트(') >= 0) ? srcRJ : srcRD;
 
@@ -6188,8 +6199,8 @@ function exportExplosionPdf() {
     drawLine(function(x){return (40/3)*x;}, '#008844');
     drawLine(function(x){return 0.05*x;}, '#cc3300');
     // 영역 라벨 + 배경
-    svg += '<rect x="'+(lx(0.003)-2)+'" y="'+(ly(5)-8)+'" width="32" height="10" fill="#e0f5e0" rx="2"/>';
-    svg += '<text x="'+lx(0.003)+'" y="'+ly(5)+'" fill="#006633" font-size="7" font-weight="700">고희석</text>';
+    svg += '<rect x="'+(lx(0.003)-2)+'" y="'+(ly(5)-8)+'" width="45" height="10" fill="#e0f5e0" rx="2"/>';
+    svg += '<text x="'+lx(0.003)+'" y="'+ly(5)+'" fill="#006633" font-size="7" font-weight="700">희석이 잘됨</text>';
     svg += '<rect x="'+(lx(0.5)-2)+'" y="'+(ly(0.08)-8)+'" width="32" height="10" fill="#fff8dd" rx="2"/>';
     svg += '<text x="'+lx(0.5)+'" y="'+ly(0.08)+'" fill="#996600" font-size="7" font-weight="700">중 간</text>';
     svg += '<rect x="'+(lx(8)-2)+'" y="'+(ly(0.008)-8)+'" width="45" height="10" fill="#fde0d0" rx="2"/>';
@@ -6341,7 +6352,7 @@ function exportExplosionXlsx() {
   var vaporP = expCurrentGas ? (expCurrentGas.vaporP||'') : '';
   var rhoRel2 = expCurrentGas ? (expCurrentGas.rhoRel||'') : '';
   var plantName = (document.getElementById('exp-plant')||{}).value || '';
-  function ru05(v){return Math.round(v*100)/100;}
+  function ru05(v){return Math.ceil(v*20)/20;}
 
   // 누출원 수집 - 등록된 누출원 우선, 없으면 기본 정의
   var sources = [];
@@ -6641,7 +6652,7 @@ function exportChartPngs(sources, rhoRel, gasName) {
 }
 function svgToPng(svgStr,w,h,cb){var c=document.createElement('canvas');c.width=w;c.height=h;var ctx=c.getContext('2d');var img=new Image();var b=new Blob([svgStr],{type:'image/svg+xml;charset=utf-8'});var u=URL.createObjectURL(b);img.onload=function(){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);URL.revokeObjectURL(u);cb(c.toDataURL('image/png'));};img.src=u;}
 
-function buildChartSvgDilution(relProp,uw){var W=840,H=360,pad=70;var xMin=0.001,xMax=100,yMin=0.001,yMax=10;function lx(v){return pad+(Math.log10(v)-Math.log10(xMin))/(Math.log10(xMax)-Math.log10(xMin))*(W-pad*2);}function ly(v){return H-pad-(Math.log10(v)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))*(H-pad*2);}var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';s+='<rect width="'+W+'" height="'+H+'" fill="#fff"/>';s+='<text x="'+(W/2)+'" y="28" fill="#000" font-size="18" text-anchor="middle" font-weight="700" font-family="sans-serif">Degree of Dilution (희석등급)</text>';s+='<line x1="'+pad+'" y1="'+(H-pad)+'" x2="'+(W-pad)+'" y2="'+(H-pad)+'" stroke="#000" stroke-width="1.5"/>';s+='<line x1="'+pad+'" y1="35" x2="'+pad+'" y2="'+(H-pad)+'" stroke="#000" stroke-width="1.5"/>';s+='<text x="'+(W/2)+'" y="'+(H-15)+'" fill="#333" font-size="13" text-anchor="middle" font-family="sans-serif">누출특성 [m³/s]</text>';s+='<text x="18" y="'+(H/2)+'" fill="#333" font-size="13" text-anchor="middle" font-family="sans-serif" transform="rotate(-90,18,'+(H/2)+')">환기속도 [m/s]</text>';var xT=[0.001,0.01,0.1,1,10,100];for(var i=0;i<xT.length;i++){var xx=lx(xT[i]);s+='<line x1="'+xx+'" y1="35" x2="'+xx+'" y2="'+(H-pad)+'" stroke="#ddd" stroke-width="0.5"/>';s+='<text x="'+xx+'" y="'+(H-pad+16)+'" fill="#333" font-size="11" text-anchor="middle" font-family="sans-serif">'+xT[i]+'</text>';}var yT=[0.001,0.01,0.1,1,10];for(var i=0;i<yT.length;i++){var yy=ly(yT[i]);s+='<line x1="'+pad+'" y1="'+yy+'" x2="'+(W-pad)+'" y2="'+yy+'" stroke="#ddd" stroke-width="0.5"/>';s+='<text x="'+(pad-6)+'" y="'+(yy+4)+'" fill="#333" font-size="11" text-anchor="end" font-family="sans-serif">'+yT[i]+'</text>';}function dl(fn,clr){var p=[];for(var x=xMin;x<=xMax;x*=1.15){var y=fn(x);if(y>=yMin&&y<=yMax)p.push(lx(x)+','+ly(y));}if(p.length>1)s+='<polyline points="'+p.join(' ')+'" fill="none" stroke="'+clr+'" stroke-width="2.5"/>';}dl(function(x){return(40/3)*x;},'#008844');dl(function(x){return 0.05*x;},'#cc3300');s+='<text x="'+(lx(0.003)+2)+'" y="'+ly(5)+'" fill="#006633" font-size="13" font-weight="700" font-family="sans-serif">고희석</text>';s+='<text x="'+(lx(0.5)+2)+'" y="'+ly(0.08)+'" fill="#996600" font-size="13" font-weight="700" font-family="sans-serif">중 간</text>';s+='<text x="'+(lx(8)+2)+'" y="'+ly(0.008)+'" fill="#cc0000" font-size="13" font-weight="700" font-family="sans-serif">희석이 안 됨</text>';var px=Math.max(xMin,Math.min(xMax,relProp));var py=Math.max(yMin,Math.min(yMax,uw));s+='<circle cx="'+lx(px)+'" cy="'+ly(py)+'" r="8" fill="#ff0000" stroke="#000" stroke-width="2"/>';s+='<text x="'+(lx(px)+12)+'" y="'+(ly(py)+4)+'" fill="#cc0000" font-size="12" font-weight="700" font-family="sans-serif">현재값</text>';s+='</svg>';return s;}
+function buildChartSvgDilution(relProp,uw){var W=840,H=360,pad=70;var xMin=0.001,xMax=100,yMin=0.001,yMax=10;function lx(v){return pad+(Math.log10(v)-Math.log10(xMin))/(Math.log10(xMax)-Math.log10(xMin))*(W-pad*2);}function ly(v){return H-pad-(Math.log10(v)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))*(H-pad*2);}var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';s+='<rect width="'+W+'" height="'+H+'" fill="#fff"/>';s+='<text x="'+(W/2)+'" y="28" fill="#000" font-size="18" text-anchor="middle" font-weight="700" font-family="sans-serif">Degree of Dilution (희석등급)</text>';s+='<line x1="'+pad+'" y1="'+(H-pad)+'" x2="'+(W-pad)+'" y2="'+(H-pad)+'" stroke="#000" stroke-width="1.5"/>';s+='<line x1="'+pad+'" y1="35" x2="'+pad+'" y2="'+(H-pad)+'" stroke="#000" stroke-width="1.5"/>';s+='<text x="'+(W/2)+'" y="'+(H-15)+'" fill="#333" font-size="13" text-anchor="middle" font-family="sans-serif">누출특성 [m³/s]</text>';s+='<text x="18" y="'+(H/2)+'" fill="#333" font-size="13" text-anchor="middle" font-family="sans-serif" transform="rotate(-90,18,'+(H/2)+')">환기속도 [m/s]</text>';var xT=[0.001,0.01,0.1,1,10,100];for(var i=0;i<xT.length;i++){var xx=lx(xT[i]);s+='<line x1="'+xx+'" y1="35" x2="'+xx+'" y2="'+(H-pad)+'" stroke="#ddd" stroke-width="0.5"/>';s+='<text x="'+xx+'" y="'+(H-pad+16)+'" fill="#333" font-size="11" text-anchor="middle" font-family="sans-serif">'+xT[i]+'</text>';}var yT=[0.001,0.01,0.1,1,10];for(var i=0;i<yT.length;i++){var yy=ly(yT[i]);s+='<line x1="'+pad+'" y1="'+yy+'" x2="'+(W-pad)+'" y2="'+yy+'" stroke="#ddd" stroke-width="0.5"/>';s+='<text x="'+(pad-6)+'" y="'+(yy+4)+'" fill="#333" font-size="11" text-anchor="end" font-family="sans-serif">'+yT[i]+'</text>';}function dl(fn,clr){var p=[];for(var x=xMin;x<=xMax;x*=1.15){var y=fn(x);if(y>=yMin&&y<=yMax)p.push(lx(x)+','+ly(y));}if(p.length>1)s+='<polyline points="'+p.join(' ')+'" fill="none" stroke="'+clr+'" stroke-width="2.5"/>';}dl(function(x){return(40/3)*x;},'#008844');dl(function(x){return 0.05*x;},'#cc3300');s+='<text x="'+(lx(0.003)+2)+'" y="'+ly(5)+'" fill="#006633" font-size="13" font-weight="700" font-family="sans-serif">희석이 잘됨</text>';s+='<text x="'+(lx(0.5)+2)+'" y="'+ly(0.08)+'" fill="#996600" font-size="13" font-weight="700" font-family="sans-serif">중 간</text>';s+='<text x="'+(lx(8)+2)+'" y="'+ly(0.008)+'" fill="#cc0000" font-size="13" font-weight="700" font-family="sans-serif">희석이 안 됨</text>';var px=Math.max(xMin,Math.min(xMax,relProp));var py=Math.max(yMin,Math.min(yMax,uw));s+='<circle cx="'+lx(px)+'" cy="'+ly(py)+'" r="8" fill="#ff0000" stroke="#000" stroke-width="2"/>';s+='<text x="'+(lx(px)+12)+'" y="'+(ly(py)+4)+'" fill="#cc0000" font-size="12" font-weight="700" font-family="sans-serif">현재값</text>';s+='</svg>';return s;}
 
 function buildChartSvgDistance(relProp,rhoRel){var W=840,H=360,pad=70;var xMin=0.01,xMax=100,yMin=0.01,yMax=100;function lx(v){return pad+(Math.log10(v)-Math.log10(xMin))/(Math.log10(xMax)-Math.log10(xMin))*(W-pad*2);}function ly(v){return H-pad-(Math.log10(v)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))*(H-pad*2);}var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';s+='<rect width="'+W+'" height="'+H+'" fill="#fff"/>';s+='<text x="'+(W/2)+'" y="28" fill="#000" font-size="18" text-anchor="middle" font-weight="700" font-family="sans-serif">Hazardous Area Distance (폭발위험장소 범위)</text>';s+='<line x1="'+pad+'" y1="'+(H-pad)+'" x2="'+(W-pad)+'" y2="'+(H-pad)+'" stroke="#000" stroke-width="1.5"/>';s+='<line x1="'+pad+'" y1="35" x2="'+pad+'" y2="'+(H-pad)+'" stroke="#000" stroke-width="1.5"/>';s+='<text x="'+(W/2)+'" y="'+(H-15)+'" fill="#333" font-size="13" text-anchor="middle" font-family="sans-serif">누출특성 [m³/s]</text>';s+='<text x="18" y="'+(H/2)+'" fill="#333" font-size="13" text-anchor="middle" font-family="sans-serif" transform="rotate(-90,18,'+(H/2)+')">위험거리 [m]</text>';var xT=[0.01,0.1,1,10,100];for(var i=0;i<xT.length;i++){var xx=lx(xT[i]);s+='<line x1="'+xx+'" y1="35" x2="'+xx+'" y2="'+(H-pad)+'" stroke="#ddd" stroke-width="0.5"/>';s+='<text x="'+xx+'" y="'+(H-pad+16)+'" fill="#333" font-size="11" text-anchor="middle" font-family="sans-serif">'+xT[i]+'</text>';}var yT=[0.01,0.1,1,10,100];for(var i=0;i<yT.length;i++){var yy=ly(yT[i]);s+='<line x1="'+pad+'" y1="'+yy+'" x2="'+(W-pad)+'" y2="'+yy+'" stroke="#ddd" stroke-width="0.5"/>';s+='<text x="'+(pad-6)+'" y="'+(yy+4)+'" fill="#333" font-size="11" text-anchor="end" font-family="sans-serif">'+yT[i]+'</text>';}function dc(distArr,clr,label){var rp=EXP_RELEASE_PROP;var p=[];for(var i=0;i<rp.length;i++){if(rp[i]>=xMin&&rp[i]<=xMax&&distArr[i]>=yMin&&distArr[i]<=yMax)p.push(lx(rp[i])+','+ly(distArr[i]));}if(p.length>1){s+='<polyline points="'+p.join(' ')+'" fill="none" stroke="'+clr+'" stroke-width="2.5"/>';var lp=p[p.length-1].split(',');s+='<text x="'+(parseFloat(lp[0])+5)+'" y="'+(parseFloat(lp[1])-6)+'" fill="'+clr+'" font-size="13" font-weight="700" font-family="sans-serif">'+label+'</text>';}}dc(EXP_DIST_HEAVY,'#cc0000','Heavy');dc(EXP_DIST_DIFF,'#cc6600','Diffusive');dc(EXP_DIST_JET,'#008844','Jet');var px=Math.max(xMin,Math.min(xMax,relProp));s+='<line x1="'+lx(px)+'" y1="35" x2="'+lx(px)+'" y2="'+(H-pad)+'" stroke="#000" stroke-width="1" stroke-dasharray="6,3"/>';var rH=expReleaseToDistance(relProp,EXP_DIST_HEAVY);var rD=expReleaseToDistance(relProp,EXP_DIST_DIFF);var rJ=expReleaseToDistance(relProp,EXP_DIST_JET);if(rH>=yMin&&rH<=yMax)s+='<circle cx="'+lx(px)+'" cy="'+ly(rH)+'" r="7" fill="#cc0000" stroke="#000" stroke-width="1.5"/>';if(rD>=yMin&&rD<=yMax)s+='<circle cx="'+lx(px)+'" cy="'+ly(rD)+'" r="7" fill="#cc6600" stroke="#000" stroke-width="1.5"/>';if(rJ>=yMin&&rJ<=yMax)s+='<circle cx="'+lx(px)+'" cy="'+ly(rJ)+'" r="7" fill="#008844" stroke="#000" stroke-width="1.5"/>';s+='</svg>';return s;}
 
@@ -7811,7 +7822,7 @@ function expSrcEditorBlock(srcIdx, title, color, defaults) {
   h += expSrcEditorSelect(srcIdx, 'grade', '누출등급', [['2차등급','2차등급'],['1차등급','1차등급'],['연속등급','연속등급']], d.grade || '2차등급', '31%');
   h += expSrcEditorField(srcIdx, 'uw', '환기속도', d.uw, 'm/s', '23%');
   h += expSrcEditorSelect(srcIdx, 'site', '장소', [['실외','실외'],['실내','실내'],['실내 및 실외','실내 및 실외']], d.site || '실외', '23%');
-  h += expSrcEditorSelect(srcIdx, 'dilGrade', '희석등급', [['고희석등급','고희석'],['중희석등급','중희석'],['저희석등급','저희석']], d.dilGrade || '중희석등급', '23%');
+  h += expSrcEditorSelect(srcIdx, 'dilGrade', '희석등급', [['고희석등급','희석이 잘됨'],['중희석등급','중간'],['저희석등급','희석이 안됨']], d.dilGrade || '중희석등급', '23%');
   h += expSrcEditorSelect(srcIdx, 'vEff', '환기유효성', [['양호','양호'],['우수','우수'],['미흡','미흡']], d.vEff || '양호', '23%');
   h += expSrcEditorSelect(srcIdx, 'zone', '구역종별', [['2종장소','2종장소'],['1종장소','1종장소'],['0종장소','0종장소'],['비폭발위험','비폭발위험']], d.zone || '2종장소', '31%');
   h += expSrcEditorField(srcIdx, 'rV', '범위직(m)', d.rV, 'm', '31%');
@@ -7840,7 +7851,7 @@ function expSrcCalcDefaults() {
   var rhoG = rhoG_db; // 0℃ 기준 DB값 (실무 기준)
   var lel = parseFloat(document.getElementById('exp-lel').value) || 5;
 
-  function ru05(v) { return Math.round(v * 100) / 100; }
+  function ru05(v) { return Math.ceil(v * 20) / 20; }
   function calcSrc(pressAbs, holeMm2) {
     var W = expCalcReleaseRateNew(mw, gamma, z, T_C, cd, k, pressAbs, holeMm2);
     var rp = W / rhoG / k / (lel / 100);
