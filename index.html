@@ -3019,12 +3019,17 @@ function updateDhAllow() {
 }
 
 // ★ 구간 수정 기능
+// ★ 수정 중인 구간의 원래 위치 (-1이면 수정 아님, 새 추가)
+var _editingSegIdx = -1;
+
 function editSegment(id) {
   var seg = null, idx = -1;
   for (var i = 0; i < segments.length; i++) {
     if (segments[i].id === id) { seg = segments[i]; idx = i; break; }
   }
   if (!seg) return;
+  // ★ 원래 위치 기억
+  _editingSegIdx = idx;
   // 폼에 기존 값 채우기
   document.getElementById('seg-name').value = seg.name;
   document.getElementById('seg-desc').value = seg.desc || '';
@@ -3146,7 +3151,13 @@ function addSegment() {
   _appliedSimulInfo = { units: 0, simulRate: 0, qExtra: 0 };
 
   var seg = { id: Date.now(), name:name, desc:desc, branch:branch, q:q, l:l, fittings:fittings, mat:mat, pipeOverride:pipeOverride, units:segUnits, simulRate:segSimulRate, qExtra:segQExtra, simulApplied:simulApplied, result:null };
-  segments.push(seg);
+  // ★ 수정 중이면 원래 위치에 삽입, 아니면 끝에 추가
+  if (_editingSegIdx >= 0 && _editingSegIdx <= segments.length) {
+    segments.splice(_editingSegIdx, 0, seg);
+    _editingSegIdx = -1;
+  } else {
+    segments.push(seg);
+  }
   recalcAll();
   renderList();
   renderResult();
