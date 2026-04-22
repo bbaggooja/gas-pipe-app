@@ -10906,6 +10906,7 @@ var LICENSE = {
   email: null,
   expiry: null,
   plan: null,
+  isPremium: false,
   features: {
     maxSegments: 5,
     explosion: false,
@@ -10919,10 +10920,17 @@ var LICENSE = {
 function updateLicenseFeatures() {
   if (LICENSE.status === 'premium') {
     LICENSE.features = { maxSegments: 999, explosion:true, sprinkler:true, dxf:true, docWriter:true, pdf:true };
+    LICENSE.isPremium = true;
   } else if (LICENSE.status === 'trial') {
     LICENSE.features = { maxSegments: 20, explosion:true, sprinkler:true, dxf:true, docWriter:false, pdf:true };
+    LICENSE.isPremium = false;
   } else {
     LICENSE.features = { maxSegments: 5, explosion:false, sprinkler:false, dxf:false, docWriter:false, pdf:false };
+    LICENSE.isPremium = false;
+  }
+  // ★ Android 앱에 프리미엄 상태 전달 (배너 광고 제거용)
+  if (typeof AndroidBridge !== 'undefined' && AndroidBridge.setAdFree) {
+    AndroidBridge.setAdFree(LICENSE.isPremium);
   }
 }
 
@@ -11050,6 +11058,7 @@ function firebaseLogout() {
     LICENSE.userId = null;
     LICENSE.email = null;
     LICENSE.expiry = null;
+    LICENSE.isPremium = false;
     updateLicenseFeatures();
     updateLoginUI();
     snack('로그아웃 완료');
