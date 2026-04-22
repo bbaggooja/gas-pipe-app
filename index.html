@@ -3022,6 +3022,14 @@ function updateDhAllow() {
 // ★ 수정 중인 구간의 원래 위치 (-1이면 수정 아님, 새 추가)
 var _editingSegIdx = -1;
 
+// ★ 구간 사이에 삽입
+function insertSegAt(idx) {
+  _editingSegIdx = idx;
+  clearSegForm();
+  showTab('input', document.getElementById('tab-input'));
+  snack((idx+1) + '번 위치에 삽입합니다. 입력 후 [구간 추가]를 눌러주세요');
+}
+
 function editSegment(id) {
   var seg = null, idx = -1;
   for (var i = 0; i < segments.length; i++) {
@@ -3275,6 +3283,10 @@ function renderList() {
       + '<div class="seg-desc">' + (s.desc||'') + branchInfo + ' | Q:' + s.q + ' | L:' + s.l + 'm | ' + matLabel + (s.units > 0 ? ' | ' + s.units + '세대(' + s.simulRate + '%)' : '') + (s.qExtra > 0 ? ' | +상가' + s.qExtra : '') + '</div>'
       + '</div>'
       + '<div class="seg-result">' + resultHtml + '</div>'
+      + '</div>';
+    // ★ 구간 사이 삽입 버튼
+    html += '<div style="text-align:center;margin:-2px 0">'
+      + '<button onclick="event.stopPropagation();insertSegAt(' + (i+1) + ')" style="padding:2px 16px;font-size:10px;background:rgba(0,212,255,0.08);border:1px dashed rgba(0,212,255,0.3);border-radius:6px;color:rgba(0,212,255,0.6);cursor:pointer">+ 여기에 삽입</button>'
       + '</div>';
   }
   el.innerHTML = html;
