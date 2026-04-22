@@ -553,6 +553,14 @@ input[type=number]{-moz-appearance:textfield}
             <input type="number" id="f-reducer" value="0" min="0">
           </div>
         </div>
+        <!-- ★ 이종 관경 피팅 추가 -->
+        <div style="margin-top:10px;padding:10px;background:rgba(255,160,50,0.06);border:1px solid rgba(255,160,50,0.2);border-radius:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div class="card-title" style="font-size:11px;margin:0;color:#ffb347">이종 관경 피팅 <span style="font-size:9px;color:var(--text3)">(배관과 다른 관경의 피팅)</span></div>
+            <button onclick="addExtraFitting()" style="padding:2px 10px;font-size:10px;background:rgba(255,160,50,0.15);border:1px solid rgba(255,160,50,0.4);border-radius:6px;color:#ffb347;cursor:pointer;font-weight:700">+ 추가</button>
+          </div>
+          <div id="extra-fitting-list"></div>
+        </div>
         <div style="margin-top:12px">
           <button class="btn btn-primary" onclick="addSegment()">+ 구간 추가 / 계산</button>
         </div>
@@ -2772,13 +2780,20 @@ function calcDH(Q, L_eff, d) {
   return (Q*Q * 0.625 * 9.81 * L_eff) / (0.5 * Math.pow(d, 5) * 1000);
 }
 
-function calcSegment(Q, L_real, fittings, mat, P_init, iterative, pipeOverride) {
+function calcSegment(Q, L_real, fittings, mat, P_init, iterative, pipeOverride, extraFittings) {
+  // ★ 이종 피팅 등가길이 계산
+  var L_extra = 0;
+  if (extraFittings && extraFittings.length) {
+    for (var ei = 0; ei < extraFittings.length; ei++) {
+      var ef = extraFittings[ei];
+      L_extra += getExtraFitLen(ef.pipeA, ef.fitType) * ef.qty;
+    }
+  }
   var P0 = P_init;
   var pipe2;
   if (pipeOverride) {
-    // 수동 관경 강제 적용 - 해당 관경으로 피팅 환산길이 계산
     pipe2 = pipeOverride;
-    var L_fit_manual = calcFitLen(pipe2.a, fittings);
+    var L_fit_manual = calcFitLen(pipe2.a, fittings) + L_extra;
     var L_eff_manual = L_real + L_fit_manual;
     var dH_manual = calcDH(Q, L_eff_manual, pipe2.d);
     return {
@@ -2794,15 +2809,15 @@ function calcSegment(Q, L_real, fittings, mat, P_init, iterative, pipeOverride) 
     };
   }
   var pipe1 = selectPipe(calcD(Q, L_real, P0), mat);
-  var L_fit1 = calcFitLen(pipe1.a, fittings);
+  var L_fit1 = calcFitLen(pipe1.a, fittings) + L_extra;
   var L_eff = L_real + L_fit1;
   pipe2 = selectPipe(calcD(Q, L_eff, P0), mat);
   if (iterative) {
-    var L_fit2 = calcFitLen(pipe2.a, fittings);
+    var L_fit2 = calcFitLen(pipe2.a, fittings) + L_extra;
     L_eff = L_real + L_fit2;
     pipe2 = selectPipe(calcD(Q, L_eff, P0), mat);
   }
-  var L_fit_final = calcFitLen(pipe2.a, fittings);
+  var L_fit_final = calcFitLen(pipe2.a, fittings) + L_extra;
   L_eff = L_real + L_fit_final;
   var dH = calcDH(Q, L_eff, pipe2.d);
   return {
@@ -3068,6 +3083,9 @@ function editSegment(id) {
   for (var j = 0; j < fids.length; j++) {
     document.getElementById(fids[j]).value = seg.fittings[fkeys[j]] || 0;
   }
+  // ★ 이종 피팅 복원
+  _extraFittings = seg.extraFittings ? JSON.parse(JSON.stringify(seg.extraFittings)) : [];
+  renderExtraFittings();
   // 기존 구간 삭제
   segments.splice(idx, 1);
   recalcAll();
@@ -3098,7 +3116,7 @@ function recalcAll() {
   for (var i = 0; i < segments.length; i++) {
     var s = segments[i];
     var P_init = getInitPressure(s.branch, i);
-    s.result = calcSegment(s.q, s.l, s.fittings, s.mat, P_init, iterative, s.pipeOverride);
+    s.result = calcSegment(s.q, s.l, s.fittings, s.mat, P_init, iterative, s.pipeOverride, s.extraFittings);
   }
 }
 
@@ -3158,7 +3176,7 @@ function addSegment() {
   // 적용 정보 초기화
   _appliedSimulInfo = { units: 0, simulRate: 0, qExtra: 0 };
 
-  var seg = { id: Date.now(), name:name, desc:desc, branch:branch, q:q, l:l, fittings:fittings, mat:mat, pipeOverride:pipeOverride, units:segUnits, simulRate:segSimulRate, qExtra:segQExtra, simulApplied:simulApplied, result:null };
+  var seg = { id: Date.now(), name:name, desc:desc, branch:branch, q:q, l:l, fittings:fittings, mat:mat, pipeOverride:pipeOverride, units:segUnits, simulRate:segSimulRate, qExtra:segQExtra, simulApplied:simulApplied, extraFittings: JSON.parse(JSON.stringify(_extraFittings)), result:null };
   // ★ 수정 중이면 원래 위치에 삽입, 아니면 끝에 추가
   if (_editingSegIdx >= 0 && _editingSegIdx <= segments.length) {
     segments.splice(_editingSegIdx, 0, seg);
@@ -3173,6 +3191,90 @@ function addSegment() {
   showPreview(seg);
   clearSegForm();
   snack(name + ' 구간이 추가되었습니다');
+}
+
+// ★ 이종 관경 피팅 데이터
+var _extraFittings = [];
+var _extraFitNextId = 1;
+
+var FITTING_TYPES = [
+  {key:'valve', name:'VALVE(볼밸브)'},
+  {key:'e90', name:'90도 엘보'},
+  {key:'e45', name:'45도 엘보'},
+  {key:'tee', name:'동경 티(TEE)'},
+  {key:'tee14', name:'1/4 축소티'},
+  {key:'red34', name:'3/4 레듀샤'},
+  {key:'tee12', name:'1/2 축소티'},
+  {key:'reducer', name:'레듀샤(1/2)'}
+];
+
+var PIPE_SIZES = [15,20,25,32,40,50,65,80,100,125,150,200,250,300,350];
+
+function addExtraFitting() {
+  _extraFittings.push({id: _extraFitNextId++, pipeA: 65, fitType: 'valve', qty: 1});
+  renderExtraFittings();
+}
+
+function removeExtraFitting(id) {
+  _extraFittings = _extraFittings.filter(function(f) { return f.id !== id; });
+  renderExtraFittings();
+}
+
+function updateExtraFitting(id, field, val) {
+  for (var i = 0; i < _extraFittings.length; i++) {
+    if (_extraFittings[i].id === id) {
+      _extraFittings[i][field] = (field === 'fitType') ? val : parseFloat(val) || 0;
+      break;
+    }
+  }
+  renderExtraFittings();
+}
+
+function getExtraFitLen(pipeA, fitType) {
+  var fd = getFitData(pipeA);
+  var map = {valve:fd.valve, e90:fd.e90, e45:fd.e45, tee:fd.tee, tee14:fd.tee14, red34:fd.valve, tee12:fd.e90, reducer:fd.red};
+  return map[fitType] || 0;
+}
+
+function getExtraFittingTotal() {
+  var total = 0;
+  for (var i = 0; i < _extraFittings.length; i++) {
+    var f = _extraFittings[i];
+    total += getExtraFitLen(f.pipeA, f.fitType) * f.qty;
+  }
+  return total;
+}
+
+function renderExtraFittings() {
+  var el = document.getElementById('extra-fitting-list');
+  if (!_extraFittings.length) { el.innerHTML = '<div style="font-size:10px;color:var(--text3);text-align:center;padding:4px">없음</div>'; return; }
+  var html = '';
+  var grandTotal = 0;
+  for (var i = 0; i < _extraFittings.length; i++) {
+    var f = _extraFittings[i];
+    var unitLen = getExtraFitLen(f.pipeA, f.fitType);
+    var sub = unitLen * f.qty;
+    grandTotal += sub;
+    // 관경 옵션
+    var pOpts = '';
+    for (var p = 0; p < PIPE_SIZES.length; p++) {
+      pOpts += '<option value="' + PIPE_SIZES[p] + '"' + (PIPE_SIZES[p] === f.pipeA ? ' selected' : '') + '>' + PIPE_SIZES[p] + 'A</option>';
+    }
+    // 종류 옵션
+    var fOpts = '';
+    for (var t = 0; t < FITTING_TYPES.length; t++) {
+      fOpts += '<option value="' + FITTING_TYPES[t].key + '"' + (FITTING_TYPES[t].key === f.fitType ? ' selected' : '') + '>' + FITTING_TYPES[t].name + '</option>';
+    }
+    html += '<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;font-size:11px">'
+      + '<select onchange="updateExtraFitting(' + f.id + ',\'pipeA\',this.value)" style="width:60px;font-size:10px;padding:3px;background:var(--bg1);border:1px solid var(--border);border-radius:4px;color:var(--text1)">' + pOpts + '</select>'
+      + '<select onchange="updateExtraFitting(' + f.id + ',\'fitType\',this.value)" style="flex:1;font-size:10px;padding:3px;background:var(--bg1);border:1px solid var(--border);border-radius:4px;color:var(--text1)">' + fOpts + '</select>'
+      + '<input type="number" value="' + f.qty + '" min="0" style="width:36px;font-size:10px;padding:3px;text-align:center;background:var(--bg1);border:1px solid var(--border);border-radius:4px;color:var(--text1)" onchange="updateExtraFitting(' + f.id + ',\'qty\',this.value)">'
+      + '<span style="color:var(--text3);min-width:55px;text-align:right">' + sub.toFixed(2) + 'm</span>'
+      + '<button onclick="removeExtraFitting(' + f.id + ')" style="padding:1px 6px;font-size:10px;background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.3);border-radius:4px;color:#ff6666;cursor:pointer">✕</button>'
+      + '</div>';
+  }
+  html += '<div style="text-align:right;font-size:11px;font-weight:700;color:#ffb347;margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,160,50,0.2)">이종 피팅 소계: ' + grandTotal.toFixed(2) + ' m</div>';
+  el.innerHTML = html;
 }
 
 function clearSegForm() {
@@ -3195,6 +3297,9 @@ function clearSegForm() {
   if (simulEl) simulEl.value = '';
   if (extraEl) extraEl.value = '0';
   if (infoEl) infoEl.style.display = 'none';
+  // ★ 이종 피팅 초기화
+  _extraFittings = [];
+  renderExtraFittings();
 }
 
 function clearAll() {
@@ -3488,7 +3593,24 @@ function showSegDetail(id) {
   }
   document.getElementById('modal-seg-body').innerHTML = resultHtml
     + '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">피팅 입력값</div>'
-    + '<table class="detail-table" style="margin-bottom:14px">' + fitRows + '</table>'
+    + '<table class="detail-table" style="margin-bottom:8px">' + fitRows + '</table>'
+    + (function() {
+      var ef = s.extraFittings || [];
+      if (!ef.length) return '';
+      var h = '<div style="font-size:12px;font-weight:700;color:#ffb347;margin-bottom:6px">이종 관경 피팅</div>'
+        + '<table class="detail-table" style="margin-bottom:14px">';
+      var ftMap = {};
+      for (var t = 0; t < FITTING_TYPES.length; t++) ftMap[FITTING_TYPES[t].key] = FITTING_TYPES[t].name;
+      var eTotal = 0;
+      for (var e = 0; e < ef.length; e++) {
+        var unitL = getExtraFitLen(ef[e].pipeA, ef[e].fitType);
+        var subL = unitL * ef[e].qty;
+        eTotal += subL;
+        h += '<tr><td>' + ef[e].pipeA + 'A</td><td>' + (ftMap[ef[e].fitType]||ef[e].fitType) + '</td><td>' + ef[e].qty + '개</td><td>' + subL.toFixed(2) + 'm</td></tr>';
+      }
+      h += '<tr class="highlight"><td colspan="3">소계</td><td>' + eTotal.toFixed(2) + 'm</td></tr></table>';
+      return h;
+    })()
     + '<div class="btn-row">'
     + '<button class="btn btn-sm" style="background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.4);color:#00d4ff" onclick="editSegment(' + id + ');closeModal(\'modal-seg\')">수정</button>'
     + '<button class="btn btn-danger btn-sm" onclick="deleteSegment(' + id + ');closeModal(\'modal-seg\')">삭제</button>'
@@ -3516,7 +3638,7 @@ function saveProject() {
   };
   for (var i = 0; i < segments.length; i++) {
     var s = segments[i];
-    data.segments.push({id:s.id,name:s.name,desc:s.desc,branch:s.branch,q:s.q,l:s.l,fittings:s.fittings,mat:s.mat,pipeOverride:s.pipeOverride||null,units:s.units||0,simulRate:s.simulRate||0,qExtra:s.qExtra||0,simulApplied:s.simulApplied||false});
+    data.segments.push({id:s.id,name:s.name,desc:s.desc,branch:s.branch,q:s.q,l:s.l,fittings:s.fittings,mat:s.mat,pipeOverride:s.pipeOverride||null,units:s.units||0,simulRate:s.simulRate||0,qExtra:s.qExtra||0,simulApplied:s.simulApplied||false,extraFittings:s.extraFittings||[]});
   }
   var saves = JSON.parse(localStorage.getItem('gas_saves') || '[]');
   saves.unshift({id: Date.now(), name:data.name, date:data.date, siteName:data.siteName, p0:data.p0, dhAllow:data.dhAllow, convFactor:data.convFactor, segments:data.segments, usageRows:data.usageRows||[]});
@@ -3787,6 +3909,25 @@ function buildPrintHtml() {
       + '</tr></thead>'
       + '<tbody>' + fitRows + '</tbody>'
       + '</table>'
+      + (function() {
+        var ef = s.extraFittings || [];
+        if (!ef.length) return '';
+        var ftMap = {};
+        for (var t = 0; t < FITTING_TYPES.length; t++) ftMap[FITTING_TYPES[t].key] = FITTING_TYPES[t].name;
+        var h = '<div style="margin-left:20px;margin-top:6px;font-size:11px;font-weight:bold;color:#886600;margin-bottom:4px">▸ 이종 관경 피팅</div>'
+          + '<table style="margin-left:20px;border-collapse:collapse;font-size:11px;border:1px solid #adb5bd">'
+          + '<thead><tr style="background:#fff8e0"><th style="padding:3px 6px;border:1px solid #adb5bd">관경</th><th style="padding:3px 6px;border:1px solid #adb5bd">피팅류</th><th style="padding:3px 6px;border:1px solid #adb5bd">수량</th><th style="padding:3px 6px;border:1px solid #adb5bd">환산길이</th><th style="padding:3px 6px;border:1px solid #adb5bd">소계</th></tr></thead><tbody>';
+        var eTotal = 0;
+        for (var e = 0; e < ef.length; e++) {
+          var uL = getExtraFitLen(ef[e].pipeA, ef[e].fitType);
+          var sL = uL * ef[e].qty;
+          eTotal += sL;
+          h += '<tr><td style="padding:3px 6px;border:1px solid #adb5bd;text-align:center">' + ef[e].pipeA + 'A</td><td style="padding:3px 6px;border:1px solid #adb5bd">' + (ftMap[ef[e].fitType]||'') + '</td><td style="padding:3px 6px;border:1px solid #adb5bd;text-align:center">' + ef[e].qty + '</td><td style="padding:3px 6px;border:1px solid #adb5bd;text-align:center">' + uL.toFixed(2) + '</td><td style="padding:3px 6px;border:1px solid #adb5bd;text-align:center">' + sL.toFixed(2) + '</td></tr>';
+        }
+        h += '<tr style="background:#fff8e0"><td colspan="4" style="padding:3px 6px;border:1px solid #adb5bd;text-align:right;font-weight:bold">이종 피팅 합계</td><td style="padding:3px 6px;border:1px solid #adb5bd;text-align:center;font-weight:bold">' + eTotal.toFixed(2) + '</td></tr>';
+        h += '</tbody></table>';
+        return h;
+      })()
 
       + '</div>';
   }
@@ -4117,6 +4258,18 @@ function buildCoxPrintHtml(p0) {
 //  UI 유틸
 // ============================================================
 function showTab(name, btn) {
+  // ★ 결과요약 탭 → 보상형 광고 시청 후 표시 (Android + 비프리미엄)
+  if (name === 'result' && !LICENSE.isPremium && typeof AndroidBridge !== 'undefined' && AndroidBridge.showRewardAd) {
+    _pendingOutputCallback = function() {
+      _showTabDirect('result', btn);
+    };
+    AndroidBridge.showRewardAd();
+    return;
+  }
+  _showTabDirect(name, btn);
+}
+
+function _showTabDirect(name, btn) {
   var pages = document.querySelectorAll('.page');
   for (var i = 0; i < pages.length; i++) pages[i].classList.remove('active');
   var tabs = document.querySelectorAll('.tab-btn');
@@ -10782,13 +10935,25 @@ function checkLicense(feature) {
 }
 
 // 출력 기능 게이트 — 로그인 + 구독 확인
+// ★ 보상형 광고 콜백 대기 함수 (결과보기용)
+var _pendingOutputCallback = null;
+
+window.onRewardAdComplete = function(success) {
+  if (success && _pendingOutputCallback) {
+    _pendingOutputCallback();
+  } else if (!success) {
+    snack('광고 시청이 완료되지 않았습니다');
+  }
+  _pendingOutputCallback = null;
+};
+
 function requireOutput(featureName) {
   // ★ 로컬 파일(오프라인)로 실행 중이면 출력 차단
   if (window.location.protocol === 'file:') {
     snack('출력 기능은 인터넷 연결이 필요합니다');
     return false;
   }
-  // ★ 로그인 확인 (테스트/정식 모두 필수)
+  // ★ 로그인 확인
   if (!LICENSE.userId) {
     var isAndroid = typeof AndroidBridge !== 'undefined';
     if (isAndroid) {
@@ -10796,16 +10961,15 @@ function requireOutput(featureName) {
         firebaseLogin();
       }
     } else {
-      // Windows/웹: 로그인 유도
       if (confirm(featureName + ' 기능을 사용하려면 로그인이 필요합니다.\n\nAndroid 앱에서 로그인 후\n동일 Google 계정으로 여기서도 로그인하세요.\n\n로그인하시겠습니까?')) {
         firebaseLogin();
       }
     }
     return false;
   }
-  // 테스트 모드: 로그인만 하면 무료 허용
+  // ★ 테스트 모드: 로그인만 하면 출력 허용
   if (LICENSE_TEST_MODE) return true;
-  // 정식 모드: 구독 확인
+  // ★ 정식 모드: 프리미엄(정기결제) 필수
   if (LICENSE.status !== 'premium') {
     showUpgradePrompt(featureName);
     return false;
