@@ -17,7 +17,133 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 .fs-modal{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
-:root{--bg0:#0a1628;--bg1:#0f2240;--bg2:#162d54;--bg3:#1d3a6e;--accent:#00d4ff;--accent2:#00ff9d;--accent3:#ff6b35;--warn:#ffcc02;--danger:#ff4757;--text1:#e8f4ff;--text2:#8ab4d4;--text3:#4a7a9b;--card:rgba(22,45,84,0.85);--border:rgba(0,212,255,0.18);--radius:14px;--shadow:0 8px 32px rgba(0,0,0,0.45);--mono:'JetBrains Mono',monospace;--sans:'Noto Sans KR',sans-serif}
+:root{
+  /* ===== 라이트 테마 (v0.9) - 기존 다크 변수명 유지하여 모든 기존 CSS 호환 ===== */
+  --bg0:#f5f5f7;
+  --bg1:#ffffff;
+  --bg2:#fafafa;
+  --bg3:#f0f0f2;
+  --accent:#007aff;
+  --accent2:#34c759;
+  --accent3:#ff9500;
+  --warn:#ff9500;
+  --danger:#ff3b30;
+  --text1:#1d1d1f;
+  --text2:#515154;
+  --text3:#86868b;
+  --card:#ffffff;
+  --border:#e5e5e7;
+  --radius:14px;
+  --shadow:0 2px 8px rgba(0,0,0,0.06);
+  --mono:'JetBrains Mono','SF Mono',monospace;
+  --sans:'Noto Sans KR',-apple-system,'Segoe UI',sans-serif;
+}
+
+/* ===== 라이트 테마 오버라이드 (하드코딩된 다크 잔재 처리) ===== */
+#topbar{
+  background:#ffffff !important;
+  border-bottom:0.5px solid var(--border) !important;
+}
+#topbar h1{ color:var(--text1) !important }
+#topbar .sub{ color:var(--text3) !important }
+
+/* input 배경 - 원본은 rgba(0,0,0,0.35) */
+input[type=number], input[type=text], select, textarea{
+  background:#fafafa !important;
+  color:var(--text1) !important;
+  border:1px solid var(--border) !important;
+}
+input:focus, select:focus, textarea:focus{
+  background:#ffffff !important;
+  border-color:var(--accent) !important;
+  box-shadow:0 0 0 3px rgba(0,122,255,0.1) !important;
+}
+select option{ background:#fff !important;color:var(--text1) !important }
+
+/* 카드/퀵버튼/결과박스 등 */
+.card{
+  background:#ffffff !important;
+  border:0.5px solid var(--border) !important;
+  backdrop-filter:none !important;
+  box-shadow:var(--shadow) !important;
+}
+.qbtn{
+  background:rgba(0,122,255,0.08) !important;
+  border:1px solid rgba(0,122,255,0.25) !important;
+  color:var(--accent) !important;
+}
+.uunit-btn{
+  background:#f5f5f7 !important;
+  border:1px solid var(--border) !important;
+  color:var(--text2) !important;
+}
+.uunit-btn.active-uunit{
+  background:rgba(0,122,255,0.1) !important;
+  border-color:var(--accent) !important;
+  color:var(--accent) !important;
+}
+.fitting-item{
+  background:#fafafa !important;
+  border:1px solid var(--border) !important;
+}
+.lpg-type-btn, .gs-type-btn{
+  background:#fafafa !important;
+  border:1px solid var(--border) !important;
+  color:var(--text2) !important;
+}
+.btn-ghost{
+  background:#f5f5f7 !important;
+  border:1px solid var(--border) !important;
+  color:var(--text2) !important;
+}
+
+/* 탭바 */
+#tabbar{ background:#fafafa !important;border-bottom:1px solid var(--border) !important }
+.tab-btn{ color:var(--text3) !important }
+.tab-btn.active{ color:var(--accent) !important;border-bottom-color:var(--accent) !important }
+
+/* 모달 */
+.fs-modal{ background:var(--bg0) !important }
+.modal{ background:rgba(0,0,0,0.4) !important }
+.modal-content{
+  background:#ffffff !important;
+  border:0.5px solid var(--border) !important;
+  color:var(--text1) !important;
+}
+
+/* 상단 quickbar (메뉴 진입 후 상단 버튼들) */
+#quickbar{
+  background:#fafafa !important;
+  border-bottom:1px solid var(--border) !important;
+}
+
+/* 결과 박스 */
+.result-box{
+  background:#ffffff !important;
+  border:0.5px solid var(--border) !important;
+}
+.detail-table td{ color:var(--text1) !important }
+.detail-table td:first-child{ color:var(--text2) !important }
+
+/* ===== 인라인 다크 배경 하드코딩 잔재 오버라이드 ===== */
+/* 홈 화면(home-active)이 아닐 때만 적용 → 홈 화면 Featured 카드 등은 보호 */
+body:not(.home-active) [style*="rgba(0,0,0,0."],
+body:not(.home-active) [style*="rgba(0, 0, 0, 0."]{
+  background-color:#fafafa !important;
+}
+/* 각종 exp/lpg/gs 모달 내부 다크 계열 보조 박스들 */
+body:not(.home-active) [style*="background:#001"],
+body:not(.home-active) [style*="background:#0a"],
+body:not(.home-active) [style*="background:#0f"],
+body:not(.home-active) [style*="background:#16"]{
+  background:#ffffff !important;
+}
+
+/* 텍스트 컬러 잔재 (밝은 청색 계열 → 기본 텍스트) */
+body:not(.home-active) [style*="color:#e8f4ff"],
+body:not(.home-active) [style*="color:#8ab4d4"]{
+  color:var(--text1) !important;
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;font-family:var(--sans);background:var(--bg0);color:var(--text1);overscroll-behavior:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh}
@@ -132,6 +258,362 @@ select option{background:var(--bg2)}
 .pulse{animation:pulse 1.5s infinite}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 input[type=number]{-moz-appearance:textfield}
+
+/* ============================================================
+   🎨 LIGHT REDESIGN — 홈 화면 & 상단바 (v2.9 step1)
+   기존 --accent/--bg0 변수는 건드리지 않음 (다른 모달 호환성 유지)
+   ============================================================ */
+:root{
+  --lv-bg: #f5f5f7;
+  --lv-surface: #ffffff;
+  --lv-surface-2: #fafafa;
+  --lv-surface-3: #f0f0f2;
+  --lv-border: #e5e5e7;
+  --lv-text-1: #1d1d1f;
+  --lv-text-2: #515154;
+  --lv-text-3: #86868b;
+  --lv-text-4: #a1a1a6;
+  --lv-brand: #007aff;
+  --lv-warning: #ff9500;
+  --lv-danger: #ff3b30;
+  --lv-r-md: 12px;
+  --lv-sh-1: 0 1px 2px rgba(0,0,0,0.04);
+  --lv-sh-2: 0 2px 8px rgba(0,0,0,0.06);
+
+  /* Category colors (시안) */
+  --cat-city-bg: #e3f2fd;     --cat-city-fg: #1976d2;
+  --cat-lpg-bg: #fff3e0;      --cat-lpg-fg: #f57c00;
+  --cat-hp-bg: #f3e5f5;       --cat-hp-fg: #7b1fa2;
+  --cat-unit-bg: #e8f5e9;     --cat-unit-fg: #388e3c;
+  --cat-std-bg: #fff8e1;      --cat-std-fg: #f9a825;
+  --cat-kgs-bg: #e0f7fa;      --cat-kgs-fg: #00838f;
+  --cat-doc-bg: #fce4ec;      --cat-doc-fg: #c2185b;
+  --cat-exp-bg: #ffebee;      --cat-exp-fg: #c62828;
+  --cat-help-bg: #ede7f6;     --cat-help-fg: #512da8;
+}
+
+body.home-active{ background:var(--lv-bg) !important; }
+body.home-active #topbar{
+  background:rgba(255,255,255,0.9) !important;
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-bottom:0.5px solid var(--lv-border) !important;
+}
+body.home-active #topbar h1{
+  color:var(--lv-text-1) !important;
+  font-size:15px !important;
+  font-weight:700 !important;
+}
+body.home-active #topbar .sub{ color:var(--lv-text-3) !important; }
+body.home-active #btn-home{
+  background:rgba(0,122,255,0.1) !important;
+  border:1px solid rgba(0,122,255,0.3) !important;
+  color:var(--lv-brand) !important;
+}
+body.home-active #btn-menu{ color:var(--lv-text-2) !important; }
+body.home-active #btn-exit{
+  background:rgba(255,59,48,0.08) !important;
+  border:1px solid rgba(255,59,48,0.3) !important;
+  color:var(--lv-danger) !important;
+}
+body.home-active #home-screen{
+  background:var(--lv-bg);
+  padding:16px 16px 24px !important;
+  gap:0 !important;
+}
+body.home-active #home-screen::-webkit-scrollbar{ width:0 }
+
+.lv-hero{ padding:4px 4px 14px }
+.lv-hero-title{
+  font-size:24px;font-weight:800;letter-spacing:-0.5px;
+  color:var(--lv-text-1);margin-bottom:12px;
+}
+.lv-search{
+  background:var(--lv-surface);border-radius:var(--lv-r-md);
+  padding:11px 14px;display:flex;align-items:center;gap:10px;
+  font-size:13px;color:var(--lv-text-3);
+  box-shadow:var(--lv-sh-1);
+  border:0.5px solid var(--lv-border);
+  cursor:pointer;
+}
+.lv-search:active{ background:var(--lv-surface-3) }
+
+.lv-section-title{
+  font-size:11px;font-weight:600;color:var(--lv-text-3);
+  letter-spacing:0.8px;text-transform:uppercase;
+  padding:16px 4px 10px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+
+.lv-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  padding:0;
+}
+.lv-tile{
+  background:var(--lv-surface);
+  border-radius:var(--lv-r-md);padding:14px;
+  aspect-ratio:1.15;
+  display:flex;flex-direction:column;justify-content:space-between;
+  box-shadow:var(--lv-sh-1);
+  border:0.5px solid var(--lv-border);
+  cursor:pointer;text-align:left;width:100%;
+  transition:transform 0.15s ease, box-shadow 0.15s ease;
+}
+.lv-tile:active{ transform:scale(0.97);box-shadow:var(--lv-sh-2) }
+.lv-tile-icon{
+  width:34px;height:34px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;flex-shrink:0;font-weight:700;
+}
+.lv-tile-body{ min-width:0 }
+.lv-tile-title{
+  font-size:14px;font-weight:700;color:var(--lv-text-1);
+  letter-spacing:-0.2px;
+}
+.lv-tile-desc{
+  font-size:11px;color:var(--lv-text-3);
+  margin-top:2px;line-height:1.3;
+}
+
+.lv-list-group{
+  background:var(--lv-surface);
+  border-radius:var(--lv-r-md);
+  border:0.5px solid var(--lv-border);
+  box-shadow:var(--lv-sh-1);
+  overflow:hidden;
+}
+.lv-list-row{
+  background:var(--lv-surface);padding:12px 14px;
+  display:flex;align-items:center;gap:12px;
+  border-bottom:0.5px solid var(--lv-border);
+  cursor:pointer;width:100%;border-left:none;border-right:none;border-top:none;
+  text-align:left;font-family:inherit;
+}
+.lv-list-row:active{ background:var(--lv-surface-3) }
+.lv-list-row:last-child{ border-bottom:none }
+.lv-list-icon{
+  width:36px;height:36px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;font-weight:700;
+}
+.lv-list-body{ flex:1;min-width:0 }
+.lv-list-title{ font-size:14px;font-weight:600;color:var(--lv-text-1) }
+.lv-list-desc{
+  font-size:11px;color:var(--lv-text-3);margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.lv-list-meta{ font-size:12px;color:var(--lv-text-4);flex-shrink:0 }
+
+.lv-footer{
+  text-align:center;color:var(--lv-text-4);
+  font-size:10px;padding:20px 0 8px;line-height:1.6;
+}
+
+/* ============================================
+   시안 3 원본 구조 (컬러만 라이트)
+   ============================================ */
+
+/* 브랜드 헤더 */
+.lv-brand-header{
+  padding:8px 4px 18px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+}
+.lv-brand-name{
+  font-size:22px;font-weight:900;letter-spacing:-0.5px;
+  color:var(--lv-text-1);line-height:1.1;
+}
+.lv-brand-sub{
+  font-size:11px;color:var(--lv-text-3);
+  margin-top:3px;letter-spacing:0.3px;
+}
+.lv-notif{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--lv-surface);border:0.5px solid var(--lv-border);
+  box-shadow:var(--lv-sh-1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;
+}
+.lv-notif:active{ background:var(--lv-surface-3) }
+
+/* Featured 카드 (오늘의 작업) */
+.lv-featured{
+  background:linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
+  border-radius:18px;padding:20px;
+  color:#fff;position:relative;overflow:hidden;
+  box-shadow:0 8px 24px rgba(0,122,255,0.25);
+  cursor:pointer;
+  transition:transform 0.15s ease;
+}
+.lv-featured:active{ transform:scale(0.98) }
+.lv-featured::before{
+  content:'';position:absolute;right:-30px;top:-30px;
+  width:140px;height:140px;border-radius:50%;
+  background:rgba(255,255,255,0.12);
+}
+.lv-featured::after{
+  content:'';position:absolute;right:20px;bottom:-40px;
+  width:90px;height:90px;border-radius:50%;
+  background:rgba(255,255,255,0.08);
+}
+.lv-feat-label{
+  font-size:11px;font-weight:600;opacity:0.9;letter-spacing:0.5px;
+  text-transform:uppercase;position:relative;z-index:1;
+}
+.lv-feat-title{
+  font-size:19px;font-weight:800;margin-top:6px;
+  letter-spacing:-0.3px;position:relative;z-index:1;
+}
+.lv-feat-desc{
+  font-size:12px;margin-top:6px;opacity:0.88;
+  line-height:1.5;position:relative;z-index:1;
+}
+.lv-feat-btn{
+  display:inline-block;margin-top:14px;
+  background:rgba(255,255,255,0.22);backdrop-filter:blur(10px);
+  padding:8px 14px;border-radius:20px;
+  font-size:12px;font-weight:700;
+  position:relative;z-index:1;
+}
+
+/* Quick Grid (4개 원형) */
+.lv-quick-grid{
+  display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;
+  padding:20px 0 8px;
+}
+.lv-quick-item{
+  background:var(--lv-surface);
+  border-radius:var(--lv-r-md);
+  border:0.5px solid var(--lv-border);
+  box-shadow:var(--lv-sh-1);
+  padding:14px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  cursor:pointer;
+  transition:transform 0.15s ease, box-shadow 0.15s ease;
+}
+.lv-quick-item:active{ transform:scale(0.95);box-shadow:var(--lv-sh-2) }
+.lv-quick-icon{
+  width:42px;height:42px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:700;
+}
+.lv-quick-label{
+  font-size:11px;font-weight:600;color:var(--lv-text-1);
+  letter-spacing:-0.2px;
+}
+
+/* 섹션 타이틀 */
+.lv-sec-title{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 4px 10px;
+}
+.lv-sec-title h3{
+  font-size:14px;font-weight:700;color:var(--lv-text-1);
+  letter-spacing:-0.2px;
+}
+.lv-sec-title a{
+  font-size:11px;color:var(--lv-brand);font-weight:500;
+  cursor:pointer;
+}
+
+/* 최근 계산 리스트 */
+.lv-recent-list{
+  background:var(--lv-surface);
+  border-radius:var(--lv-r-md);
+  border:0.5px solid var(--lv-border);
+  box-shadow:var(--lv-sh-1);
+  overflow:hidden;
+}
+.lv-recent-item{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px;
+  border-bottom:0.5px solid var(--lv-border);
+  cursor:pointer;
+}
+.lv-recent-item:last-child{ border-bottom:none }
+.lv-recent-item:active{ background:var(--lv-surface-3) }
+.lv-recent-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+}
+.lv-recent-text{ flex:1;min-width:0 }
+.lv-recent-title{
+  font-size:13px;font-weight:600;color:var(--lv-text-1);
+  letter-spacing:-0.1px;
+}
+.lv-recent-time{
+  font-size:10px;color:var(--lv-text-3);margin-top:2px;
+}
+.lv-recent-empty{
+  text-align:center;color:var(--lv-text-3);
+  padding:20px 14px;font-size:12px;
+}
+
+/* 타일 아이콘은 인라인 스타일로 카테고리 컬러 지정 (var(--cat-*-bg/fg)) */
+
+/* Pro 배지 (시안 톤) */
+.lv-pro-badge{
+  font-size:10px;font-weight:600;color:var(--lv-warning);
+  background:#fff8e1;border:1px solid #ffe082;
+  padding:3px 8px;border-radius:12px;
+  display:inline-flex;align-items:center;gap:3px;
+}
+
+/* 상단바 ⋮ 메뉴 */
+.lv-menu-dots{
+  background:none;border:none;color:var(--lv-text-2);
+  font-size:20px;cursor:pointer;padding:4px 8px;
+  font-weight:700;
+}
+
+/* 하단 탭바 */
+.lv-tabbar{
+  display:none;
+  position:fixed;left:0;right:0;bottom:0;
+  background:rgba(255,255,255,0.95);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-top:0.5px solid var(--lv-border);
+  padding:6px 0 env(safe-area-inset-bottom,8px);
+  z-index:50;
+  justify-content:space-around;
+  align-items:stretch;
+}
+body.home-active .lv-tabbar{ display:flex }
+body.home-active #home-screen{ padding-bottom:72px !important }
+.lv-tab{
+  flex:1;background:none;border:none;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 2px;cursor:pointer;
+  color:var(--lv-text-3);
+  font-family:inherit;
+}
+.lv-tab-icon{ font-size:20px;line-height:1 }
+.lv-tab-label{ font-size:10px;font-weight:600;letter-spacing:-0.2px }
+.lv-tab.active{ color:var(--lv-brand) }
+.lv-tab.active .lv-tab-icon{ transform:scale(1.05) }
+
+/* 상단바 라이트 로고 */
+body.home-active #topbar img{
+  border-radius:7px;box-shadow:var(--lv-sh-1);
+}
+
+/* 라이트 모드: 홈/종료 버튼 숨김, Pro 배지 표시, 메뉴 버튼 점점점 스타일 */
+body.home-active #btn-home{ display:none !important }
+body.home-active #btn-exit{ display:none !important }
+body.home-active #lv-pro-badge{ display:inline-flex !important }
+body.home-active #btn-menu{
+  background:none !important;border:none !important;
+  color:var(--lv-text-2) !important;font-size:22px !important;
+  padding:4px 8px !important;
+  transform:rotate(90deg);
+}
+/* 라이트 모드: 상단 h1을 새 텍스트로 교체 */
+body.home-active #topbar h1{ font-size:0 !important }
+body.home-active #topbar h1::before{
+  content:"가스배관전문가 툴";
+  font-size:15px;font-weight:700;letter-spacing:-0.3px;
+  color:var(--lv-text-1);
+}
+body.home-active #topbar .sub{ display:none !important }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -144,6 +626,7 @@ input[type=number]{-moz-appearance:textfield}
       <h1>가스배관 관경 산출</h1>
       <div class="sub">Gas Pipe Sizing Calculator</div>
     </div>
+    <span id="lv-pro-badge" class="lv-pro-badge" style="display:none;margin-right:6px">👑 Pro</span>
     <button id="btn-home" onclick="goHome()" style="background:rgba(0,212,255,0.1);border:1.5px solid rgba(0,212,255,0.4);border-radius:8px;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;padding:5px 10px;margin-right:4px;letter-spacing:0.5px">홈</button>
     <button id="btn-menu" onclick="openMenu()">&#9776;</button>
     <button id="btn-exit" onclick="exitApp()" style="background:rgba(255,71,87,0.1);border:1.5px solid rgba(255,71,87,0.5);border-radius:8px;color:var(--danger);font-size:11px;font-weight:700;cursor:pointer;padding:5px 10px;margin-left:4px;letter-spacing:0.5px">종료</button>
@@ -166,76 +649,103 @@ input[type=number]{-moz-appearance:textfield}
     <!-- 로그인 상태 -->
     <div id="login-status" style="text-align:right;min-height:24px;margin-bottom:-4px"></div>
 
-    <!-- 도시가스 -->
-    <button class="hmenu" onclick="goMain('city')">
-      <div class="hicon" style="background:radial-gradient(circle at 30% 30%,#4a9eff,#1a5ac0,#0d3a80)">
-        <svg class="hi" width="34" height="34" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="rgba(100,180,255,0.6)" stroke-width="3"/><circle cx="50" cy="50" r="26" fill="url(#gBlue)" opacity="0.9"/><circle cx="38" cy="38" r="10" fill="rgba(200,230,255,0.5)"/><defs><radialGradient id="gBlue" cx="40%" cy="35%"><stop offset="0%" stop-color="#a0d4ff"/><stop offset="60%" stop-color="#2878d0"/><stop offset="100%" stop-color="#0a3a70"/></radialGradient></defs></svg>
-      </div>
-      <div class="htxt"><div class="ht">도시가스</div><div class="hs">배관 관경 산출 · Pole/Cox/Weymouth</div></div>
-    </button>
+    <!-- ========== 시안 3 원본 구조 (컬러만 라이트) ========== -->
 
-    <!-- LPG -->
-    <button class="hmenu" onclick="goMain('lpg')">
-      <div class="hicon" style="background:radial-gradient(circle at 40% 30%,#ff8040,#cc4400,#802800)">
-        <svg class="hi" width="30" height="34" viewBox="0 0 60 72"><path d="M30 4 C24 18,8 28,8 46 C8 58,18 68,30 68 C42 68,52 58,52 46 C52 28,36 18,30 4Z" fill="url(#gFire)"/><path d="M30 30 C27 38,20 42,20 50 C20 56,24 60,30 60 C36 60,40 56,40 50 C40 42,33 38,30 30Z" fill="url(#gFireIn)"/><defs><linearGradient id="gFire" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffe040"/><stop offset="50%" stop-color="#ff6a00"/><stop offset="100%" stop-color="#cc2200"/></linearGradient><linearGradient id="gFireIn" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff8a0"/><stop offset="100%" stop-color="#ffaa20"/></linearGradient></defs></svg>
+    <!-- 브랜드 헤더 -->
+    <div class="lv-brand-header">
+      <div>
+        <div class="lv-brand-name">GAS PIPE</div>
+        <div class="lv-brand-sub">Sizing Calculator Pro</div>
       </div>
-      <div class="htxt"><div class="ht">LPG</div><div class="hs">LPG 사용량 계산 · 기기관리</div></div>
-    </button>
+      <div class="lv-notif" onclick="openHelp()">🔔</div>
+    </div>
 
-    <!-- 고압/액화가스 -->
-    <button class="hmenu" onclick="goMain('highpressure')">
-      <div class="hicon" style="background:radial-gradient(circle at 35% 35%,#8090b0,#506080,#2a3a50)">
-        <svg class="hi" width="34" height="34" viewBox="0 0 100 100"><rect x="12" y="30" width="30" height="50" rx="3" fill="#607890" stroke="#8aa0b8" stroke-width="1.5"/><rect x="48" y="20" width="22" height="60" rx="3" fill="#506880" stroke="#8aa0b8" stroke-width="1.5"/><rect x="16" y="15" width="22" height="15" rx="2" fill="#708898"/><rect x="76" y="40" width="14" height="40" rx="2" fill="#607890" stroke="#8aa0b8" stroke-width="1"/><rect x="50" y="10" width="6" height="10" rx="1" fill="#90a8c0"/><path d="M42 80 L48 80" stroke="#8aa0b8" stroke-width="1.5"/><circle cx="27" cy="55" r="4" fill="#a0c0e0" opacity="0.5"/></svg>
+    <!-- Featured: 오늘의 작업 -->
+    <div class="lv-featured" onclick="lvContinueLast()">
+      <div class="lv-feat-label">오늘의 작업</div>
+      <div class="lv-feat-title">도시가스 배관 검토</div>
+      <div class="lv-feat-desc">최근 작업한 계산을<br>이어서 진행할 수 있어요</div>
+      <div class="lv-feat-btn">이어하기 →</div>
+    </div>
+
+    <!-- Quick Grid: 4개 원형 × 2줄 (총 8개) -->
+    <div class="lv-quick-grid">
+      <button class="lv-quick-item" onclick="goMain('city')">
+        <div class="lv-quick-icon" style="background:var(--cat-city-bg);color:var(--cat-city-fg)">🔵</div>
+        <div class="lv-quick-label">도시가스</div>
+      </button>
+      <button class="lv-quick-item" onclick="goMain('lpg')">
+        <div class="lv-quick-icon" style="background:var(--cat-lpg-bg);color:var(--cat-lpg-fg)">🔥</div>
+        <div class="lv-quick-label">LPG</div>
+      </button>
+      <button class="lv-quick-item" onclick="goMain('highpressure')">
+        <div class="lv-quick-icon" style="background:var(--cat-hp-bg);color:var(--cat-hp-fg)">📊</div>
+        <div class="lv-quick-label">고압</div>
+      </button>
+      <button class="lv-quick-item" onclick="openUnitConvert();hideHome()">
+        <div class="lv-quick-icon" style="background:var(--cat-unit-bg);color:var(--cat-unit-fg)">⇅</div>
+        <div class="lv-quick-label">환산</div>
+      </button>
+      <button class="lv-quick-item" onclick="openExternal('https://www.kgs.or.kr/kgs/acdc/board.do')">
+        <div class="lv-quick-icon" style="background:var(--cat-std-bg);color:var(--cat-std-fg)">📖</div>
+        <div class="lv-quick-label">안전공사</div>
+      </button>
+      <button class="lv-quick-item" onclick="openKgs();hideHome()">
+        <div class="lv-quick-icon" style="background:var(--cat-kgs-bg);color:var(--cat-kgs-fg)">📑</div>
+        <div class="lv-quick-label">KGS코드</div>
+      </button>
+      <button class="lv-quick-item" onclick="openDocWriter();hideHome()">
+        <div class="lv-quick-icon" style="background:var(--cat-doc-bg);color:var(--cat-doc-fg)">📋</div>
+        <div class="lv-quick-label">서류작성</div>
+      </button>
+      <button class="lv-quick-item" onclick="openHelp()">
+        <div class="lv-quick-icon" style="background:var(--cat-help-bg);color:var(--cat-help-fg)">?</div>
+        <div class="lv-quick-label">도움말</div>
+      </button>
+    </div>
+
+    <!-- 최근 계산 -->
+    <div class="lv-sec-title">
+      <h3>최근 계산</h3>
+      <a onclick="openHelp()">모두보기</a>
+    </div>
+    <div class="lv-recent-list" id="lv-recent-list">
+      <div class="lv-recent-empty">
+        최근 계산 기록이 없습니다<br>
+        <span style="font-size:10px;color:var(--lv-text-4)">계산 후 저장하면 여기에 표시됩니다</span>
       </div>
-      <div class="htxt"><div class="ht">고압 / 액화가스</div><div class="hs">저장능력 산정 · 고압가스안전관리법</div></div>
-    </button>
+    </div>
 
-    <!-- 단위환산 -->
-    <button class="hmenu" onclick="openUnitConvert();hideHome()">
-      <div class="hicon" style="background:radial-gradient(circle at 35% 35%,#40c898,#208060,#104838)">
-        <svg class="hi" width="34" height="34" viewBox="0 0 100 100"><line x1="50" y1="15" x2="50" y2="85" stroke="#70d8a8" stroke-width="4" stroke-linecap="round"/><polygon points="30,40 50,15 70,40" fill="none" stroke="#a0f0c8" stroke-width="3" stroke-linejoin="round"/><polygon points="30,60 50,85 70,60" fill="none" stroke="#a0f0c8" stroke-width="3" stroke-linejoin="round"/><circle cx="28" cy="50" r="6" fill="#60d0a0" opacity="0.7"/><circle cx="72" cy="50" r="6" fill="#60d0a0" opacity="0.7"/></svg>
-      </div>
-      <div class="htxt"><div class="ht">단위환산</div><div class="hs">압력 · 유량 · 열량 단위 변환</div></div>
-    </button>
-
-    <!-- 안전공사 기준지침 -->
-    <button class="hmenu" onclick="openExternal('https://www.kgs.or.kr/kgs/acdc/board.do')">
-      <div class="hicon" style="background:radial-gradient(circle at 35% 35%,#d09040,#986020,#603810)">
-        <svg class="hi" width="30" height="34" viewBox="0 0 60 72"><rect x="10" y="6" width="40" height="56" rx="3" fill="#c08040" stroke="#e0a860" stroke-width="1.5"/><rect x="10" y="6" width="40" height="14" rx="3" fill="#d09848"/><line x1="18" y1="30" x2="42" y2="30" stroke="#e8c090" stroke-width="2"/><line x1="18" y1="38" x2="42" y2="38" stroke="#e8c090" stroke-width="2"/><line x1="18" y1="46" x2="36" y2="46" stroke="#e8c090" stroke-width="2"/><rect x="34" y="52" width="16" height="12" rx="2" fill="#d04040" opacity="0.8"/></svg>
-      </div>
-      <div class="htxt"><div class="ht">안전공사 기준지침</div><div class="hs">한국가스안전공사 기준·지침 조회</div></div>
-    </button>
-
-    <!-- KGS 코드조회 -->
-    <button class="hmenu" onclick="openKgs();hideHome()">
-      <div class="hicon" style="background:radial-gradient(circle at 35% 35%,#60d060,#308030,#185018)">
-        <svg class="hi" width="30" height="34" viewBox="0 0 60 72"><rect x="8" y="8" width="44" height="56" rx="4" fill="#40a040" stroke="#70d070" stroke-width="1.5"/><rect x="8" y="8" width="16" height="56" rx="4" fill="#308030"/><line x1="30" y1="22" x2="46" y2="22" stroke="#90e890" stroke-width="2"/><line x1="30" y1="32" x2="44" y2="32" stroke="#90e890" stroke-width="1.5"/><line x1="30" y1="40" x2="46" y2="40" stroke="#90e890" stroke-width="1.5"/><line x1="30" y1="48" x2="42" y2="48" stroke="#90e890" stroke-width="1.5"/></svg>
-      </div>
-      <div class="htxt"><div class="ht">KGS 코드조회</div><div class="hs">가스기술기준 코드 검색</div></div>
-    </button>
-
-    <!-- 서류작성 -->
-    <button class="hmenu" onclick="openDocWriter();hideHome()">
-      <div class="hicon" style="background:radial-gradient(circle at 35% 35%,#e0a030,#b07818,#784810)">
-        <svg class="hi" width="30" height="34" viewBox="0 0 60 72"><rect x="10" y="4" width="40" height="56" rx="3" fill="#d09030" stroke="#e8b850" stroke-width="1.5"/><rect x="10" y="4" width="40" height="12" rx="3" fill="#e0a840"/><line x1="16" y1="26" x2="44" y2="26" stroke="#f0d090" stroke-width="2"/><line x1="16" y1="34" x2="44" y2="34" stroke="#f0d090" stroke-width="2"/><line x1="16" y1="42" x2="38" y2="42" stroke="#f0d090" stroke-width="2"/><rect x="32" y="48" width="18" height="14" rx="2" fill="#40a040" opacity="0.9"/><text x="41" y="58" text-anchor="middle" font-size="10" fill="#fff" font-weight="bold">GO</text></svg>
-      </div>
-      <div class="htxt"><div class="ht">서류작성</div><div class="hs">기술검토 서류 자동 작성 · 템플릿 기반</div></div>
-    </button>
-
-    <!-- 도움말 -->
-    <button class="hmenu" onclick="openHelp()">
-      <div class="hicon" style="background:radial-gradient(circle at 35% 35%,#6080c0,#304880,#182848)">
-        <svg class="hi" width="34" height="34" viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="none" stroke="rgba(120,160,220,0.6)" stroke-width="3"/><text x="50" y="62" text-anchor="middle" font-size="44" font-weight="900" fill="url(#gQ)" font-family="serif">?</text><defs><linearGradient id="gQ" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c0d8ff"/><stop offset="100%" stop-color="#6090d0"/></linearGradient></defs></svg>
-      </div>
-      <div class="htxt"><div class="ht">도움말</div><div class="hs">사용방법 · 계산식 · 버전정보</div></div>
-    </button>
-
-    <!-- 버전 정보 -->
-    <div style="text-align:center;color:var(--text3);font-size:10px;margin-top:8px;padding-bottom:20px">
-      Gas Pipe Sizing Calculator v2.7<br>
+    <div class="lv-footer">
+      Gas Pipe Sizing Calculator v2.9<br>
+      © 수림 GAS Engineering<br>
       <span id="home-trial-info"></span>
     </div>
   </div>
+
+  <!-- ============ 하단 탭바 (라이트 테마 전용) ============ -->
+  <nav class="lv-tabbar">
+    <button class="lv-tab active" onclick="lvTabClick(this,'home')">
+      <span class="lv-tab-icon">⌂</span>
+      <span class="lv-tab-label">홈</span>
+    </button>
+    <button class="lv-tab" onclick="lvTabClick(this,'calc')">
+      <span class="lv-tab-icon">🧮</span>
+      <span class="lv-tab-label">계산</span>
+    </button>
+    <button class="lv-tab" onclick="lvTabClick(this,'doc')">
+      <span class="lv-tab-icon">📋</span>
+      <span class="lv-tab-label">서류</span>
+    </button>
+    <button class="lv-tab" onclick="lvTabClick(this,'kgs')">
+      <span class="lv-tab-icon">📖</span>
+      <span class="lv-tab-label">기준</span>
+    </button>
+    <button class="lv-tab" onclick="lvTabClick(this,'me')">
+      <span class="lv-tab-icon">👤</span>
+      <span class="lv-tab-label">내정보</span>
+    </button>
+  </nav>
 
   <!-- ============ MAIN WORK AREA (기존 화면) ============ -->
   <div id="main-work" style="display:none;flex-direction:column;flex:1;overflow:hidden">
@@ -2982,8 +3492,54 @@ function usageApplyQ() {
   if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
+// ========== 라이트 테마 하단 탭바 핸들러 ==========
+function lvTabClick(btn, tab) {
+  // 모든 탭의 active 해제
+  var tabs = document.querySelectorAll('.lv-tab');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  btn.classList.add('active');
+
+  if (tab === 'home') {
+    // 이미 홈에 있으므로 아무것도 안 함 (스크롤 맨 위로)
+    var hs = document.getElementById('home-screen');
+    if (hs) hs.scrollTop = 0;
+  } else if (tab === 'calc') {
+    goMain('city');
+  } else if (tab === 'doc') {
+    openDocWriter();
+    hideHome();
+  } else if (tab === 'kgs') {
+    openKgs();
+    hideHome();
+  } else if (tab === 'me') {
+    // 로그인 상태에 따라 분기
+    if (typeof handleLogin === 'function') {
+      handleLogin();
+    } else {
+      alert('내정보 기능은 준비 중입니다.');
+    }
+  }
+}
+
+// ========== 이어하기 (Featured 카드) ==========
+function lvContinueLast() {
+  try {
+    var last = localStorage.getItem('lv-last-task');
+    if (last) {
+      var obj = JSON.parse(last);
+      if (obj.mode === 'lpg') goMain('lpg');
+      else if (obj.mode === 'hp') goMain('highpressure');
+      else goMain('city');
+      return;
+    }
+  } catch(e) {}
+  goMain('city');
+}
+
 // 환산유량 계수 변경 시 재계산
 document.addEventListener('DOMContentLoaded', function() {
+  // 앱 시작 시 홈 화면이 표시되므로 라이트 테마 적용
+  document.body.classList.add('home-active');
   var cfEl = document.getElementById('conv-factor');
   if (cfEl) cfEl.addEventListener('input', function() { usageCalc(); });
   usageRender();
@@ -7688,6 +8244,7 @@ window.onAndroidReady = function(info) {
 // ─── HOME SCREEN ───
 function goMain(mode) {
   mode = mode || 'city';
+  document.body.classList.remove('home-active');
   document.getElementById('home-screen').style.display = 'none';
   var mw = document.getElementById('main-work');
   mw.style.display = 'flex';
@@ -7710,9 +8267,11 @@ function goMain(mode) {
   if (mode === 'highpressure') { openGasStorageCalc(); }
 }
 function hideHome() {
+  document.body.classList.remove('home-active');
   document.getElementById('home-screen').style.display = 'none';
 }
 function goHome() {
+  document.body.classList.add('home-active');
   document.getElementById('home-screen').style.display = 'flex';
   document.getElementById('main-work').style.display = 'none';
   // 탭바/페이지 복원 (다음 진입시를 위해)
