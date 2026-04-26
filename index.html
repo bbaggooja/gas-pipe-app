@@ -8510,7 +8510,10 @@ function expCollectState() {
     rHeavyUp: document.getElementById('exp-r-heavy-up').textContent,
     rDiffUp: document.getElementById('exp-r-diff-up').textContent,
     rJetUp: document.getElementById('exp-r-jet-up').textContent,
-    noteHtml: document.getElementById('exp-note').innerHTML
+    noteHtml: document.getElementById('exp-note').innerHTML,
+    // ★ 등록된 누출원 목록 저장 (v0.11 추가)
+    registeredSources: JSON.parse(JSON.stringify(expRegisteredSources || [])),
+    srcCount: expSrcCount || 0
   };
 }
 
@@ -8537,6 +8540,15 @@ function expRestoreState(s) {
   if (s.ventEff) expSetVentEff(s.ventEff);
   if (s.dilutionGrade) expDilutionGrade = s.dilutionGrade;
   document.getElementById('exp-plant-name').value = s.plantName || '';
+  // ★ 등록된 누출원 목록 복원 (v0.11 추가)
+  if (s.registeredSources && Array.isArray(s.registeredSources)) {
+    expRegisteredSources = JSON.parse(JSON.stringify(s.registeredSources));
+    expSrcCount = (typeof s.srcCount === 'number') ? s.srcCount : expRegisteredSources.length;
+  } else {
+    expRegisteredSources = [];
+    expSrcCount = 0;
+  }
+  if (typeof expUpdateSrcCounter === 'function') expUpdateSrcCounter();
   expUpdatePressure();
   expCalc();
 }
@@ -11815,3 +11827,12 @@ window.addEventListener('load', function() {
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
