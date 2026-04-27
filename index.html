@@ -751,6 +751,7 @@ body.home-active #topbar .sub{ display:none !important }
   <div id="main-work" style="display:none;flex-direction:column;flex:1;overflow:hidden">
   <!-- 상단 퀵버튼 행 -->
   <div id="quickbar" style="display:flex;gap:4px;padding:4px 8px;background:var(--bg1);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0">
+    <button class="qbtn" data-mode="city" onclick="pipeResetAll()" style="border-color:rgba(255,80,80,0.5);color:#ff8080" title="모든 입력값 초기화">♻️ 초기화</button>
     <button class="qbtn" data-mode="city" onclick="openMonthlyCalc()">📊 월사용량 계산</button>
     <button class="qbtn" data-mode="city" onclick="openLeakTest()" style="border-color:rgba(0,180,255,0.5);color:#7dd8ff">🔬 기밀시험시간</button>
     <button class="qbtn" data-mode="city" onclick="openExplosionCalc()" style="border-color:rgba(255,160,50,0.5);color:#ffb347">💥 방폭거리</button>
@@ -1760,7 +1761,10 @@ body.home-active #topbar .sub{ display:none !important }
       <div style="font-size:14px;font-weight:700;color:#ffb347">💥 단독정압기 방폭거리 계산</div>
       <div style="font-size:10px;color:var(--text3)">KGS HAC v1.16 · IEC 60079-10-1 · 2차누출등급</div>
     </div>
-    <button onclick="closeExplosionCalc()" style="background:rgba(255,160,50,0.15);border:1px solid rgba(255,160,50,0.4);border-radius:8px;color:#ffb347;font-size:13px;font-weight:700;cursor:pointer;padding:7px 14px">✕ 닫기</button>
+    <div style="display:flex;gap:6px">
+      <button onclick="expResetAll()" style="background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.4);border-radius:8px;color:#ff8080;font-size:12px;font-weight:700;cursor:pointer;padding:7px 10px" title="모든 입력값 초기화">♻️ 초기화</button>
+      <button onclick="closeExplosionCalc()" style="background:rgba(255,160,50,0.15);border:1px solid rgba(255,160,50,0.4);border-radius:8px;color:#ffb347;font-size:13px;font-weight:700;cursor:pointer;padding:7px 14px">✕ 닫기</button>
+    </div>
   </div>
 
   <div style="max-width:700px;margin:0 auto;padding:22px 12px 28px;display:flex;flex-direction:column;gap:12px">
@@ -2279,7 +2283,7 @@ body.home-active #topbar .sub{ display:none !important }
   <div style="background:var(--bg2);border:1px solid rgba(80,160,255,0.35);border-radius:14px;width:100%;max-width:560px;overflow:hidden;margin:auto">
     <div style="background:linear-gradient(135deg,#001020,#001835);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(80,160,255,0.25)">
       <div style="font-size:14px;font-weight:900;color:#60c8ff">📋 PDF 누출원 편집</div>
-      <button onclick="document.getElementById('modal-src-editor').style.display='none'" style="background:none;border:none;color:#ff6060;font-size:22px;cursor:pointer;padding:0 4px">✕</button>
+      <button onclick="expCloseSrcEditor()" style="background:none;border:none;color:#ff6060;font-size:22px;cursor:pointer;padding:0 4px">✕</button>
     </div>
     <div style="padding:12px;font-size:11px;color:var(--text3);line-height:1.5;background:rgba(0,0,0,0.2)">
       PDF 출력 시 표2(누출원 목록)에 반영됩니다. 계산 결과를 기본값으로 채우고, 필요한 항목만 수정하세요.
@@ -2287,8 +2291,8 @@ body.home-active #topbar .sub{ display:none !important }
     </div>
     <div id="src-editor-body" style="padding:10px;max-height:70vh;overflow-y:auto"></div>
     <div style="padding:10px;display:flex;gap:8px">
-      <button onclick="document.getElementById('modal-src-editor').style.display='none'" style="flex:1;padding:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-weight:700;cursor:pointer">닫기</button>
-      <button onclick="document.getElementById('modal-src-editor').style.display='none';exportExplosionPdf()" style="flex:1;padding:10px;background:rgba(0,180,100,0.15);border:1.5px solid rgba(0,180,100,0.5);border-radius:10px;color:#00cc77;font-weight:700;font-size:13px;cursor:pointer">📄 PDF 출력</button>
+      <button onclick="expCloseSrcEditor()" style="flex:1;padding:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-weight:700;cursor:pointer">닫기</button>
+      <button onclick="expSrcEditorExportPdf()" style="flex:1;padding:10px;background:rgba(0,180,100,0.15);border:1.5px solid rgba(0,180,100,0.5);border-radius:10px;color:#00cc77;font-weight:700;font-size:13px;cursor:pointer">📄 PDF 출력</button>
     </div>
   </div>
 </div>
@@ -3865,6 +3869,70 @@ function clearAll() {
   renderList(); renderResult(); updateBadge();
   document.getElementById('preview-card').style.display = 'none';
   snack('전체 삭제되었습니다');
+}
+
+// ★ v0.13: 관경계산 전체 초기화 (시설명/공급압력/구간/사용량/피팅 모두 초기화)
+function pipeResetAll() {
+  if (!confirm('⚠️ 도시가스 관경계산을 모두 초기화하시겠습니까?\n\n• 시설명, 공급압력, 허용손실 등 기본설정\n• 등록된 모든 구간 데이터\n• 사용량 입력값\n• 피팅 입력값\n\n위 항목들이 모두 초기 상태로 되돌아갑니다.\n저장된 프로젝트는 유지됩니다.\n\n계속하시겠습니까?')) return;
+
+  // 구간 전체 삭제
+  segments = [];
+  if (typeof renderList === 'function') renderList();
+  if (typeof renderResult === 'function') renderResult();
+  if (typeof updateBadge === 'function') updateBadge();
+  var pc = document.getElementById('preview-card');
+  if (pc) pc.style.display = 'none';
+
+  // 사용량 초기화
+  if (typeof usageRows !== 'undefined') usageRows = [];
+  if (typeof renderExtraFittings === 'function') {
+    if (typeof _extraFittings !== 'undefined') _extraFittings = [];
+    renderExtraFittings();
+  }
+  if (typeof usageRender === 'function') usageRender();
+
+  // 입력 필드 초기화 (기본값으로)
+  var defaults = {
+    'site-name': '',
+    'p0': '2.3',
+    'dh-allow': '0.15',
+    'dh-multiplier': '2',
+    'seg-name': '',
+    'seg-desc': '',
+    'seg-q': '',
+    'seg-kcal': '',
+    'seg-l': '',
+    'seg-units': '',
+    'seg-simul-rate': '',
+    'conv-factor': '11000'
+  };
+  for (var id in defaults) {
+    var el = document.getElementById(id);
+    if (el) el.value = defaults[id];
+  }
+
+  // 체크박스 초기화
+  var chkReg = document.getElementById('chk-regulator');
+  if (chkReg) chkReg.checked = false;
+
+  // 피팅 카운터 초기화 (모든 fitting input)
+  var fittingInputs = document.querySelectorAll('input[id^="fit-"]');
+  for (var i = 0; i < fittingInputs.length; i++) {
+    fittingInputs[i].value = '0';
+  }
+
+  // dh-allow 재계산
+  if (typeof updateDhAllow === 'function') updateDhAllow();
+  // 사용량 재계산
+  if (typeof usageCalc === 'function') usageCalc();
+
+  // 첫 탭으로 이동
+  if (typeof showTab === 'function') {
+    var setupTab = document.getElementById('tab-setup');
+    if (setupTab) showTab('setup', setupTab);
+  }
+
+  snack('♻️ 관경계산 초기화 완료');
 }
 
 function deleteSegment(id) {
@@ -8851,25 +8919,130 @@ function expAddSrc() {
   }
   current.push({ equip:'', location:'', pressGauge:'0', hole:'0.25', grade:'2차등급', uw:'1', site:'실외', dilGrade:'중희석등급', vEff:'양호', zone:'2종장소', rV:'0', rH:'0', note:'', sv11:false, isSV:false });
   expSrcCount = current.length;
+  // ★ v0.12: expRegisteredSources 배열도 즉시 갱신
+  expRegisteredSources = JSON.parse(JSON.stringify(current));
+  expUpdateSrcCounter();
   expRenderSrcEditor(current);
 }
 
 function expRemoveSrc(idx) {
   if (expSrcCount <= 0) return;
+  // 편집기에 입력된 현재 값들을 모두 수집
   var current = [];
   for (var i = 0; i < expSrcCount; i++) {
     if (i !== idx) current.push(expGetSrcEditorData(i));
   }
   expSrcCount = current.length;
+
+  // ★ v0.12: expRegisteredSources 배열도 즉시 갱신 (PDF/Excel 출력 시 반영되도록)
+  expRegisteredSources = JSON.parse(JSON.stringify(current));
+  expUpdateSrcCounter();
+
   if (expSrcCount === 0) {
     // 모두 삭제 시 편집기 닫기
     document.getElementById('modal-src-editor').style.display = 'none';
-    expRegisteredSources = [];
-    expUpdateSrcCounter();
     snack('모든 누출원이 삭제되었습니다');
     return;
   }
   expRenderSrcEditor(current);
+  snack('누출원 ' + (idx+1) + ' 삭제 완료 (총 ' + expSrcCount + '개)');
+}
+
+// ★ v0.12: 편집기에 입력된 값들을 expRegisteredSources에 일괄 동기화
+function expCommitSrcEditor() {
+  if (expSrcCount <= 0) { expRegisteredSources = []; expUpdateSrcCounter(); return; }
+  var current = [];
+  for (var i = 0; i < expSrcCount; i++) {
+    current.push(expGetSrcEditorData(i));
+  }
+  expRegisteredSources = JSON.parse(JSON.stringify(current));
+  expUpdateSrcCounter();
+}
+
+// ★ v0.13: 방폭계산 전체 초기화
+function expResetAll() {
+  if (!confirm('⚠️ 방폭계산을 초기화하시겠습니까?\n\n• 가스 선택, 입력값, 등록된 누출원이 모두 삭제됩니다.\n• 저장된 계산(💾)은 유지됩니다.\n\n계속하시겠습니까?')) return;
+
+  // 가스 선택 초기화
+  expCurrentGas = null;
+  var sEl = document.getElementById('exp-search');
+  if (sEl) sEl.value = '';
+  var slEl = document.getElementById('exp-search-list');
+  if (slEl) { slEl.innerHTML = ''; slEl.style.display = 'none'; }
+  var pgEl = document.getElementById('exp-props-grid');
+  if (pgEl) pgEl.innerHTML = '';
+
+  // 가스 물성 입력값 초기화
+  var fields = ['exp-mw','exp-rhog','exp-lel','exp-gamma','exp-cd','exp-press','exp-hole','exp-uw','exp-plant-name','exp-save-name'];
+  for (var i = 0; i < fields.length; i++) {
+    var el = document.getElementById(fields[i]);
+    if (el) el.value = '';
+  }
+
+  // 기본값 복원
+  var defaults = {
+    'exp-temp': '13.5', 'exp-z': '1', 'exp-k': '1',
+    'exp-press-type': 'gauge_mpa', 'exp-grade': '2'
+  };
+  for (var id in defaults) {
+    var el = document.getElementById(id);
+    if (el) el.value = defaults[id];
+  }
+
+  // 상태 변수 초기화
+  expGradeSelected = '2nd';
+  expSite = 'outdoor';
+  expDilutionGrade = '고희석등급';
+  expVentEffVal = 'good';
+  expAbsPressure = 201325;
+  expRegisteredSources = [];
+  expSrcCount = 0;
+  if (typeof expSrcData !== 'undefined') expSrcData = [null, null, null];
+
+  // UI 갱신
+  if (typeof expSetGrade === 'function') expSetGrade('2nd');
+  if (typeof expSetSite === 'function') expSetSite('outdoor');
+  if (typeof expSetVentEff === 'function') expSetVentEff('good');
+  if (typeof expUpdateSrcCounter === 'function') expUpdateSrcCounter();
+  if (typeof expUpdatePressure === 'function') expUpdatePressure();
+  if (typeof expCalc === 'function') expCalc();
+
+  // 결과 영역 초기화
+  var resultIds = ['exp-r-heavy','exp-r-diff','exp-r-jet','exp-r-heavy-up','exp-r-diff-up','exp-r-jet-up'];
+  for (var i = 0; i < resultIds.length; i++) {
+    var el = document.getElementById(resultIds[i]);
+    if (el) el.textContent = '-';
+  }
+  var noteEl = document.getElementById('exp-note');
+  if (noteEl) noteEl.innerHTML = '';
+
+  // 첫 탭으로 이동
+  if (typeof expTab === 'function') expTab(0);
+
+  snack('♻️ 방폭계산 초기화 완료');
+}
+  if (expSrcCount <= 0) { expRegisteredSources = []; expUpdateSrcCounter(); return; }
+  var current = [];
+  for (var i = 0; i < expSrcCount; i++) {
+    current.push(expGetSrcEditorData(i));
+  }
+  expRegisteredSources = JSON.parse(JSON.stringify(current));
+  expUpdateSrcCounter();
+}
+
+// ★ v0.12: 편집기 닫기 (편집값 자동 저장)
+function expCloseSrcEditor() {
+  expCommitSrcEditor();
+  var m = document.getElementById('modal-src-editor');
+  if (m) m.style.display = 'none';
+}
+
+// ★ v0.12: 편집기 → PDF 출력 (편집값 저장 후 출력)
+function expSrcEditorExportPdf() {
+  expCommitSrcEditor();
+  var m = document.getElementById('modal-src-editor');
+  if (m) m.style.display = 'none';
+  if (typeof exportExplosionPdf === 'function') exportExplosionPdf();
 }
 
 // 편집기에서 압력/누출공/×1.1 변경 시 거리 재계산
@@ -11827,12 +12000,3 @@ window.addEventListener('load', function() {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
