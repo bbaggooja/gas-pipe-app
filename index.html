@@ -9021,14 +9021,6 @@ function expResetAll() {
 
   snack('♻️ 방폭계산 초기화 완료');
 }
-  if (expSrcCount <= 0) { expRegisteredSources = []; expUpdateSrcCounter(); return; }
-  var current = [];
-  for (var i = 0; i < expSrcCount; i++) {
-    current.push(expGetSrcEditorData(i));
-  }
-  expRegisteredSources = JSON.parse(JSON.stringify(current));
-  expUpdateSrcCounter();
-}
 
 // ★ v0.12: 편집기 닫기 (편집값 자동 저장)
 function expCloseSrcEditor() {
