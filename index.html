@@ -755,6 +755,7 @@ body.home-active #topbar .sub{ display:none !important }
     <button class="qbtn" data-mode="city" onclick="openMonthlyCalc()">📊 월사용량 계산</button>
     <button class="qbtn" data-mode="city" onclick="openLeakTest()" style="border-color:rgba(0,180,255,0.5);color:#7dd8ff">🔬 기밀시험시간</button>
     <button class="qbtn" data-mode="city" onclick="openExplosionCalc()" style="border-color:rgba(255,160,50,0.5);color:#ffb347">💥 방폭거리</button>
+    <button class="qbtn" data-mode="city" onclick="openCascade()" style="border-color:rgba(80,180,255,0.5);color:#7dc0ff">🌬️ 캐스케이드</button>
     <button class="qbtn" data-mode="lpg" onclick="openLpgCalc()" style="border-color:rgba(255,107,53,0.4);color:#ff9f7f">🔥 LPG 사용량</button>
     <button class="qbtn" data-mode="lpg" onclick="openSprinklerCalc()" style="border-color:rgba(255,80,80,0.4);color:#ff6666">💦 살수장치</button>
     <button class="qbtn" data-mode="lpg" onclick="openGasStorageCalc()" style="border-color:rgba(160,100,255,0.5);color:#c39fff">🏭 저장능력</button>
@@ -2401,6 +2402,140 @@ body.home-active #topbar .sub{ display:none !important }
     </div>
   </div>
 </div>
+
+<!-- ========== 캐스케이드 연통 설계 모달 (KGS GC209) ========== -->
+<div id="modal-cascade" class="fs-modal" style="display:none;position:fixed;inset:0;background:var(--bg1);z-index:500;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <!-- 상단 헤더 -->
+  <div style="background:linear-gradient(135deg,#001028,#002048);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid rgba(80,180,255,0.4);position:sticky;top:0;z-index:10">
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#7dc0ff">🌬️ 캐스케이드 연통 설계</div>
+      <div style="font-size:10px;color:var(--text3)">KGS GC209 2026 · 단면적·급환기·설치기준</div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button onclick="cscReset()" style="background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.4);border-radius:8px;color:#ff8080;font-size:12px;font-weight:700;cursor:pointer;padding:7px 10px" title="모든 입력값 초기화">♻️ 초기화</button>
+      <button onclick="closeCascade()" style="background:rgba(80,180,255,0.15);border:1px solid rgba(80,180,255,0.4);border-radius:8px;color:#7dc0ff;font-size:13px;font-weight:700;cursor:pointer;padding:7px 14px">✕ 닫기</button>
+    </div>
+  </div>
+
+  <div style="max-width:700px;margin:0 auto;padding:14px 12px 28px;display:flex;flex-direction:column;gap:12px">
+
+    <!-- 시설명/위치 -->
+    <div style="background:rgba(80,180,255,0.05);border:1px solid rgba(80,180,255,0.2);border-radius:10px;padding:10px">
+      <div style="font-size:11px;font-weight:700;color:#7dc0ff;margin-bottom:6px">현장 정보</div>
+      <input type="text" id="csc-site" placeholder="현장명 / 시설명 (예: ○○빌딩 보일러실)" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid rgba(80,180,255,0.3);background:var(--bg2);color:var(--text1);font-size:13px">
+    </div>
+
+    <!-- ① 단독부 입력 -->
+    <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:12px">
+      <div style="font-size:12px;font-weight:700;color:#7dc0ff;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <span>① 단독부 (보일러측 연통) 입력</span>
+        <button onclick="cscAddSrc()" style="background:rgba(80,180,255,0.15);border:1px solid rgba(80,180,255,0.4);border-radius:6px;color:#7dc0ff;font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px">+ 보일러 추가</button>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:rgba(80,180,255,0.08);border-radius:6px;line-height:1.5">
+        💡 가스보일러와 캐스케이드연통을 연결하는 부분 (KGS GC209 2.3.3.1)<br>
+        단면적은 가스보일러 접속부 단면적 이상이어야 합니다.
+      </div>
+      <div id="csc-srcs" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div id="csc-src-summary" style="margin-top:8px;padding:8px 10px;background:rgba(80,180,255,0.1);border-radius:6px;font-size:12px;color:var(--text1);font-weight:700"></div>
+    </div>
+
+    <!-- ② 공용부 입력 -->
+    <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:12px">
+      <div style="font-size:12px;font-weight:700;color:#7dc0ff;margin-bottom:8px">② 공용부 (캐스케이드연통) 검토</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:rgba(80,180,255,0.08);border-radius:6px;line-height:1.5">
+        💡 공용부 단면적 ≥ 단독부 단면적 합계 × 1.5배 (KGS GC209 2.3.3.1)
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div class="input-group">
+          <label>공용부 외경 <span class="unit">(mm)</span></label>
+          <input type="number" id="csc-com-d" value="125" step="1" min="50" oninput="cscCalc()">
+        </div>
+        <div class="input-group">
+          <label>공용부 길이 L <span class="unit">(m)</span></label>
+          <input type="number" id="csc-com-l" value="5" step="0.1" min="0" oninput="cscCalc()">
+        </div>
+      </div>
+      <div id="csc-com-result" style="margin-top:8px;padding:10px;border-radius:8px;font-size:12px"></div>
+    </div>
+
+    <!-- ③ 급/환기구 검토 -->
+    <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:12px">
+      <div style="font-size:12px;font-weight:700;color:#7dc0ff;margin-bottom:8px">③ 보일러실 급/환기구 검토</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:rgba(80,180,255,0.08);border-radius:6px;line-height:1.5">
+        💡 자연환기구(갤러리창 등) 유효개구율 50% 적용 → 캐스케이드 단면적 합계 이상 권장
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+        <div class="input-group">
+          <label>급기구 W <span class="unit">(mm)</span></label>
+          <input type="number" id="csc-air-in-w" value="300" step="10" oninput="cscCalc()">
+        </div>
+        <div class="input-group">
+          <label>급기구 H <span class="unit">(mm)</span></label>
+          <input type="number" id="csc-air-in-h" value="300" step="10" oninput="cscCalc()">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+        <div class="input-group">
+          <label>환기구 W <span class="unit">(mm)</span></label>
+          <input type="number" id="csc-air-out-w" value="300" step="10" oninput="cscCalc()">
+        </div>
+        <div class="input-group">
+          <label>환기구 H <span class="unit">(mm)</span></label>
+          <input type="number" id="csc-air-out-h" value="300" step="10" oninput="cscCalc()">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div class="input-group">
+          <label>유효개구율 <span class="unit">(%)</span></label>
+          <input type="number" id="csc-air-eff" value="50" step="5" min="10" max="100" oninput="cscCalc()">
+        </div>
+        <div class="input-group">
+          <label>각 개수</label>
+          <input type="number" id="csc-air-n" value="1" step="1" min="1" oninput="cscCalc()">
+        </div>
+      </div>
+      <div id="csc-air-result" style="margin-top:8px;padding:10px;border-radius:8px;font-size:12px"></div>
+    </div>
+
+    <!-- ④ 기밀시험 자동 판정 (2.3.3.3) -->
+    <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:12px">
+      <div style="font-size:12px;font-weight:700;color:#7dc0ff;margin-bottom:8px">④ 기밀시험 의무 자동 판정 (KGS GC209 2.3.3.3)</div>
+      <div id="csc-leak-test" style="padding:8px 10px;border-radius:6px"></div>
+    </div>
+
+    <!-- ⑤ 설치기준 체크리스트 -->
+    <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:12px">
+      <div style="font-size:12px;font-weight:700;color:#7dc0ff;margin-bottom:8px">⑤ 설치기준 체크리스트 (KGS GC209 2.3.4)</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text2)" id="csc-checks">
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px"><input type="checkbox" class="csc-chk" data-id="c1" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><span>단독부 0.4m 이상 높이 유지 (2.3.4.1)</span></label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px"><input type="checkbox" class="csc-chk" data-id="c2" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><span>단독부 접속부 중심간 거리 0.25m 이상 (2.3.4.2)</span></label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px"><input type="checkbox" class="csc-chk" data-id="c3" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><span>응축수 외부 배출 가능 구조 (2.3.4.3)</span></label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px"><input type="checkbox" class="csc-chk" data-id="c4" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><span>단독부 접속구 마주보지 않게 배치 (2.3.4.4)</span></label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px"><input type="checkbox" class="csc-chk" data-id="c5" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><span>터미널 주위 0.6m(방열판 0.3m) 이내 가연성 없음 (2.3.4.5)</span></label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px"><input type="checkbox" class="csc-chk" data-id="c6" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><span>터미널 0.6m 이내 실내 유입 개구부 없음 (2.3.4.6)</span></label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px"><input type="checkbox" class="csc-chk" data-id="c7" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><span>터미널 충분히 개방된 옥외 설치 (2.3.4.7)</span></label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px"><input type="checkbox" class="csc-chk" data-id="c8" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><span>동일 제조사 보일러, 제시 대수 이하 연결 (2.3.1-5)</span></label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px"><input type="checkbox" class="csc-chk" data-id="c9" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><span>역류방지장치 설치 보일러 사용 (2.3.1-2)</span></label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px"><input type="checkbox" class="csc-chk" data-id="c10" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><span>5분 이상 연막 주입 기밀시험 실시 (해당 시, 2.3.3.3)</span></label>
+      </div>
+    </div>
+
+    <!-- 비고 -->
+    <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:12px">
+      <div style="font-size:12px;font-weight:700;color:#7dc0ff;margin-bottom:8px">비고</div>
+      <textarea id="csc-note" placeholder="기타 특기사항 (예: 본 건물 보일러실은 기존 철근콘크리트…)" style="width:100%;min-height:60px;padding:9px 10px;border-radius:8px;border:1px solid rgba(80,180,255,0.3);background:var(--bg2);color:var(--text1);font-size:12px;resize:vertical;font-family:var(--sans)"></textarea>
+    </div>
+
+    <!-- 출력 버튼 -->
+    <div style="display:flex;gap:6px">
+      <button onclick="cscExportPdf()" style="flex:1;padding:11px;background:rgba(0,180,100,0.15);border:1.5px solid rgba(0,180,100,0.5);border-radius:10px;color:#00cc77;font-weight:700;font-size:13px;cursor:pointer">📄 PDF 출력</button>
+      <button onclick="cscExportDxf()" style="flex:1;padding:11px;background:rgba(160,100,255,0.15);border:1.5px solid rgba(160,100,255,0.5);border-radius:10px;color:#c39fff;font-weight:700;font-size:13px;cursor:pointer">📐 DXF 도면</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ========== 정압기 방폭구역 도면 모달 끝 표시 (다음 KGS 모달) ========== -->
 
 <!-- KGS 코드 검색 전체화면 -->
 <div id="modal-kgs" class="fs-modal" style="display:none;position:fixed;inset:0;background:var(--bg1);z-index:550;overflow-y:auto;-webkit-overflow-scrolling:touch">
@@ -9035,6 +9170,518 @@ function expSrcEditorExportPdf() {
   var m = document.getElementById('modal-src-editor');
   if (m) m.style.display = 'none';
   if (typeof exportExplosionPdf === 'function') exportExplosionPdf();
+}
+
+// ============================================================
+//  🌬️ 캐스케이드 연통 설계 (KGS GC209 2026)
+// ============================================================
+var cscSrcs = []; // [{d:50, n:4}, {d:75, n:1}, ...]
+
+function openCascade() {
+  document.getElementById('modal-cascade').style.display = 'block';
+  hideHome();
+  // 초기 1행 (없을 때만)
+  if (cscSrcs.length === 0) {
+    cscSrcs = [{d:50, n:4, kw:0}];
+  }
+  cscRenderSrcs();
+  cscCalc();
+}
+
+function closeCascade() {
+  document.getElementById('modal-cascade').style.display = 'none';
+}
+
+function cscReset() {
+  if (!confirm('⚠️ 캐스케이드 입력값을 모두 초기화하시겠습니까?')) return;
+  cscSrcs = [{d:50, n:4, kw:0}];
+  document.getElementById('csc-site').value = '';
+  document.getElementById('csc-com-d').value = '125';
+  document.getElementById('csc-com-l').value = '5';
+  document.getElementById('csc-air-in-w').value = '300';
+  document.getElementById('csc-air-in-h').value = '300';
+  document.getElementById('csc-air-out-w').value = '300';
+  document.getElementById('csc-air-out-h').value = '300';
+  document.getElementById('csc-air-eff').value = '50';
+  document.getElementById('csc-air-n').value = '1';
+  document.getElementById('csc-note').value = '';
+  // 체크박스 초기화
+  var chks = document.querySelectorAll('.csc-chk');
+  for (var i = 0; i < chks.length; i++) chks[i].checked = false;
+  cscRenderSrcs();
+  cscCalc();
+  if (typeof snack === 'function') snack('♻️ 캐스케이드 초기화 완료');
+}
+
+function cscAddSrc() {
+  // 현재 입력값 보존
+  cscReadSrcs();
+  cscSrcs.push({d:50, n:1, kw:0});
+  cscRenderSrcs();
+  cscCalc();
+}
+
+function cscDelSrc(idx) {
+  cscReadSrcs();
+  cscSrcs.splice(idx, 1);
+  if (cscSrcs.length === 0) cscSrcs.push({d:50, n:1, kw:0});
+  cscRenderSrcs();
+  cscCalc();
+}
+
+function cscReadSrcs() {
+  // DOM에서 현재 입력값 읽어 cscSrcs 갱신
+  var rows = document.querySelectorAll('.csc-src-row');
+  var arr = [];
+  for (var i = 0; i < rows.length; i++) {
+    var dEl = rows[i].querySelector('.csc-src-d');
+    var nEl = rows[i].querySelector('.csc-src-n');
+    var kwEl = rows[i].querySelector('.csc-src-kw');
+    if (dEl && nEl) {
+      arr.push({
+        d: parseFloat(dEl.value) || 50,
+        n: parseInt(nEl.value) || 1,
+        kw: kwEl ? (parseFloat(kwEl.value) || 0) : 0
+      });
+    }
+  }
+  if (arr.length > 0) cscSrcs = arr;
+}
+
+function cscRenderSrcs() {
+  var html = '';
+  for (var i = 0; i < cscSrcs.length; i++) {
+    var s = cscSrcs[i];
+    var kw = (s.kw === undefined) ? 0 : s.kw;
+    html += '<div class="csc-src-row" style="display:grid;grid-template-columns:30px 1fr 0.7fr 1fr 32px;gap:5px;align-items:end;padding:6px 8px;background:rgba(80,180,255,0.05);border-radius:6px">'
+      + '<div style="font-size:11px;font-weight:700;color:#7dc0ff;text-align:center;padding-bottom:6px">#' + (i+1) + '</div>'
+      + '<div><label style="font-size:10px;color:var(--text3)">외경 Ø(mm)</label>'
+      + '<input type="number" class="csc-src-d" value="' + s.d + '" step="5" min="20" max="500" oninput="cscCalc()" style="width:100%;padding:6px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text1);font-size:12px"></div>'
+      + '<div><label style="font-size:10px;color:var(--text3)">대수</label>'
+      + '<input type="number" class="csc-src-n" value="' + s.n + '" step="1" min="1" oninput="cscCalc()" style="width:100%;padding:6px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text1);font-size:12px"></div>'
+      + '<div><label style="font-size:10px;color:var(--text3)">표시소비량(kW/대)</label>'
+      + '<input type="number" class="csc-src-kw" value="' + kw + '" step="1" min="0" oninput="cscCalc()" style="width:100%;padding:6px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text1);font-size:12px" placeholder="예: 80"></div>'
+      + '<button onclick="cscDelSrc(' + i + ')" style="background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.4);border-radius:6px;color:#ff8080;font-size:14px;cursor:pointer;padding:6px;margin-bottom:0" title="삭제">✕</button>'
+      + '</div>';
+  }
+  document.getElementById('csc-srcs').innerHTML = html;
+}
+
+function cscArea(d_mm) {
+  // 원형 단면적 (mm²)
+  return Math.PI * d_mm * d_mm / 4;
+}
+
+function cscFmt(num, decimals) {
+  decimals = (decimals === undefined) ? 2 : decimals;
+  if (!isFinite(num)) return '-';
+  return num.toLocaleString('ko-KR', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+}
+
+function cscCalc() {
+  cscReadSrcs();
+
+  // ① 단독부 합계
+  var sumSingle_mm2 = 0;
+  var sumSingle_mm2_15x = 0; // ×1.5배 (필요 공용부)
+  var detailHtml = '';
+  for (var i = 0; i < cscSrcs.length; i++) {
+    var s = cscSrcs[i];
+    var a = cscArea(s.d);
+    var total = a * s.n;
+    sumSingle_mm2 += total;
+    detailHtml += '#' + (i+1) + ': Ø' + s.d + 'mm × ' + s.n + '대 = ' + cscFmt(a) + ' × ' + s.n + ' = ' + cscFmt(total) + ' mm²<br>';
+  }
+  sumSingle_mm2_15x = sumSingle_mm2 * 1.5;
+  var sumSingle_m2 = sumSingle_mm2 / 1e6;
+
+  document.getElementById('csc-src-summary').innerHTML =
+    '<div style="font-size:10px;color:var(--text3);font-weight:500;margin-bottom:4px;line-height:1.5">' + detailHtml + '</div>' +
+    '<div>📊 단독부 합계: <b style="color:#7dc0ff">' + cscFmt(sumSingle_mm2) + ' mm²</b> = ' + cscFmt(sumSingle_m2, 4) + ' m²</div>' +
+    '<div style="font-size:11px;color:var(--text2);margin-top:2px">필요 공용부 (×1.5배): <b style="color:#ffb347">' + cscFmt(sumSingle_mm2_15x) + ' mm²</b></div>';
+
+  // ② 공용부 검토 (1본 기준)
+  var comD = parseFloat(document.getElementById('csc-com-d').value) || 0;
+  var comArea = cscArea(comD);
+  var ratio = sumSingle_mm2 > 0 ? (comArea / sumSingle_mm2) : 0;
+  var comOk = comArea >= sumSingle_mm2_15x;
+  var comColor = comOk ? '#00cc77' : '#ff5555';
+  var comBg = comOk ? 'rgba(0,200,100,0.1)' : 'rgba(255,80,80,0.1)';
+  var comBorder = comOk ? 'rgba(0,200,100,0.4)' : 'rgba(255,80,80,0.4)';
+  var comStatus = comOk
+    ? '✅ 적합 (' + cscFmt(ratio, 2) + '배 ≥ 1.50배)'
+    : '❌ 부적합 (' + cscFmt(ratio, 2) + '배 < 1.50배 · 공용부 외경 확대 필요)';
+
+  document.getElementById('csc-com-result').innerHTML =
+    '<div style="background:' + comBg + ';border:1px solid ' + comBorder + ';border-radius:6px;padding:8px">' +
+    '<div style="color:var(--text2);margin-bottom:4px">공용부: Ø' + comD + 'mm = <b style="color:' + comColor + '">' + cscFmt(comArea) + ' mm²</b> (' + cscFmt(comArea/1e6, 4) + ' m²)</div>' +
+    '<div style="font-weight:700;color:' + comColor + ';font-size:13px">' + comStatus + '</div>' +
+    '</div>';
+
+  // ③ 급/환기구 검토
+  var inW = parseFloat(document.getElementById('csc-air-in-w').value) || 0;
+  var inH = parseFloat(document.getElementById('csc-air-in-h').value) || 0;
+  var outW = parseFloat(document.getElementById('csc-air-out-w').value) || 0;
+  var outH = parseFloat(document.getElementById('csc-air-out-h').value) || 0;
+  var airEff = (parseFloat(document.getElementById('csc-air-eff').value) || 50) / 100;
+  var airN = parseInt(document.getElementById('csc-air-n').value) || 1;
+
+  var inArea_m2 = (inW * inH / 1e6) * airEff * airN;
+  var outArea_m2 = (outW * outH / 1e6) * airEff * airN;
+
+  // 비교 기준: 단독부 합계 (m²)
+  var refArea_m2 = sumSingle_m2;
+  var inOk = inArea_m2 >= refArea_m2;
+  var outOk = outArea_m2 >= refArea_m2;
+  var bothOk = inOk && outOk;
+  var airColor = bothOk ? '#00cc77' : '#ff5555';
+  var airBg = bothOk ? 'rgba(0,200,100,0.1)' : 'rgba(255,80,80,0.1)';
+  var airBorder = bothOk ? 'rgba(0,200,100,0.4)' : 'rgba(255,80,80,0.4)';
+  var airStatus = bothOk
+    ? '✅ 안전상 문제 없음 (캐스케이드 단면적 ' + cscFmt(refArea_m2, 4) + ' m² 초과)'
+    : '⚠️ 단면적 부족 검토 필요';
+
+  document.getElementById('csc-air-result').innerHTML =
+    '<div style="background:' + airBg + ';border:1px solid ' + airBorder + ';border-radius:6px;padding:8px;line-height:1.6">' +
+    '<div style="color:var(--text2)">급기구: ' + inW + '×' + inH + 'mm × ' + airN + '개 × ' + (airEff*100) + '% = <b style="color:' + (inOk?'#00cc77':'#ff5555') + '">' + cscFmt(inArea_m2, 4) + ' m²</b> ' + (inOk ? '✅' : '❌') + '</div>' +
+    '<div style="color:var(--text2)">환기구: ' + outW + '×' + outH + 'mm × ' + airN + '개 × ' + (airEff*100) + '% = <b style="color:' + (outOk?'#00cc77':'#ff5555') + '">' + cscFmt(outArea_m2, 4) + ' m²</b> ' + (outOk ? '✅' : '❌') + '</div>' +
+    '<div style="color:var(--text3);font-size:11px;margin-top:4px">기준: 캐스케이드 단독부 합계 = ' + cscFmt(refArea_m2, 4) + ' m²</div>' +
+    '<div style="font-weight:700;color:' + airColor + ';font-size:13px;margin-top:4px">' + airStatus + '</div>' +
+    '</div>';
+
+  // ④ 기밀시험 자동 판정 (KGS GC209 2.3.3.3)
+  cscUpdateLeakTestAuto();
+}
+
+// 기밀시험 자동 판정 (KGS GC209 2.3.3.3)
+function cscUpdateLeakTestAuto() {
+  var has70over = false;     // 70kW 초과 232.6kW 이하 보일러 존재
+  var count70under = 0;      // 70kW 이하 보일러 대수
+  var detail = [];
+  for (var i = 0; i < cscSrcs.length; i++) {
+    var s = cscSrcs[i];
+    var kw = s.kw || 0;
+    if (kw > 70 && kw <= 232.6) {
+      has70over = true;
+      detail.push('#' + (i+1) + ': ' + kw + 'kW × ' + s.n + '대 (70kW 초과)');
+    } else if (kw > 0 && kw <= 70) {
+      count70under += s.n;
+    }
+  }
+  var leakTestRequired = has70over || (count70under > 6);
+  var reasons = [];
+  if (has70over) reasons.push('• 70kW 초과 232.6kW 이하 보일러 연결');
+  if (count70under > 6) reasons.push('• 70kW 이하 보일러 ' + count70under + '대 (6대 초과)');
+
+  var box = document.getElementById('csc-leak-test');
+  if (!box) return;
+
+  var color, bg, border, text;
+  if (leakTestRequired) {
+    color = '#ffb347'; bg = 'rgba(255,160,50,0.1)'; border = 'rgba(255,160,50,0.4)';
+    text = '⚠️ 기밀시험 필요 (5분 이상 연막 주입)';
+  } else if (count70under === 0 && !has70over) {
+    color = '#888'; bg = 'rgba(128,128,128,0.08)'; border = 'rgba(128,128,128,0.3)';
+    text = '⚪ 표시소비량(kW) 입력 시 자동 판정';
+  } else {
+    color = '#00cc77'; bg = 'rgba(0,200,100,0.1)'; border = 'rgba(0,200,100,0.4)';
+    text = '✅ 기밀시험 의무 아님';
+  }
+
+  box.style.background = bg;
+  box.style.border = '1px solid ' + border;
+  box.innerHTML =
+    '<div style="font-weight:700;color:' + color + ';font-size:13px;margin-bottom:4px">' + text + '</div>' +
+    '<div style="color:var(--text3);font-size:11px;line-height:1.6">'
+    + '기준 (KGS GC209 2.3.3.3):<br>'
+    + '① 70kW(60,200kcal) 초과 232.6kW(200,000kcal) 이하 보일러 연결<br>'
+    + '② 70kW 이하 보일러를 6대 초과 연결<br>'
+    + (reasons.length ? '<br><b style="color:' + color + '">해당 사유:</b><br>' + reasons.join('<br>') : '')
+    + '</div>';
+}
+
+function cscCheckedItems() {
+  var arr = [];
+  var labels = document.querySelectorAll('#csc-checks label');
+  for (var i = 0; i < labels.length; i++) {
+    var inp = labels[i].querySelector('input');
+    var span = labels[i].querySelector('span');
+    if (inp && span) {
+      arr.push({ checked: inp.checked, text: span.textContent });
+    }
+  }
+  return arr;
+}
+
+function cscExportPdf() {
+  cscReadSrcs();
+  cscCalc();
+
+  var site = document.getElementById('csc-site').value || '(현장명 미입력)';
+  var note = document.getElementById('csc-note').value || '';
+  var checks = cscCheckedItems();
+
+  // 단독부 표 (kW 포함)
+  var srcRows = '';
+  var sumSingle_mm2 = 0;
+  var has70over = false;
+  var count70under = 0;
+  for (var i = 0; i < cscSrcs.length; i++) {
+    var s = cscSrcs[i];
+    var a = cscArea(s.d);
+    var total = a * s.n;
+    sumSingle_mm2 += total;
+    var kwTxt = (s.kw > 0) ? (s.kw + ' kW') : '-';
+    srcRows += '<tr><td>#' + (i+1) + '</td><td>Ø' + s.d + ' mm</td><td>' + s.n + ' 대</td><td>' + kwTxt + '</td><td>' + cscFmt(a) + '</td><td><b>' + cscFmt(total) + '</b></td></tr>';
+    if (s.kw > 70 && s.kw <= 232.6) has70over = true;
+    else if (s.kw > 0 && s.kw <= 70) count70under += s.n;
+  }
+  var sumSingle_15x = sumSingle_mm2 * 1.5;
+  var leakTestRequired = has70over || (count70under > 6);
+
+  // 공용부
+  var comD = parseFloat(document.getElementById('csc-com-d').value) || 0;
+  var comArea = cscArea(comD);
+  var ratio = sumSingle_mm2 > 0 ? (comArea / sumSingle_mm2) : 0;
+  var comOk = comArea >= sumSingle_15x;
+
+  // 급환기
+  var inW = parseFloat(document.getElementById('csc-air-in-w').value) || 0;
+  var inH = parseFloat(document.getElementById('csc-air-in-h').value) || 0;
+  var outW = parseFloat(document.getElementById('csc-air-out-w').value) || 0;
+  var outH = parseFloat(document.getElementById('csc-air-out-h').value) || 0;
+  var airEff = (parseFloat(document.getElementById('csc-air-eff').value) || 50) / 100;
+  var airN = parseInt(document.getElementById('csc-air-n').value) || 1;
+  var inArea_m2 = (inW * inH / 1e6) * airEff * airN;
+  var outArea_m2 = (outW * outH / 1e6) * airEff * airN;
+  var refArea_m2 = sumSingle_mm2 / 1e6;
+
+  var checkRows = '';
+  for (var j = 0; j < checks.length; j++) {
+    checkRows += '<tr><td style="text-align:center;font-size:14px">' + (checks[j].checked ? '☑' : '☐') + '</td><td>' + checks[j].text + '</td></tr>';
+  }
+
+  var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>캐스케이드 연통 설계서</title>'
+    + '<style>'
+    + '@page{size:A4;margin:15mm 12mm}'
+    + 'body{font-family:"Malgun Gothic",sans-serif;font-size:11pt;color:#000;line-height:1.5}'
+    + 'h1{font-size:18pt;text-align:center;margin:0 0 6px;border-bottom:2px solid #000;padding-bottom:6px}'
+    + 'h2{font-size:13pt;color:#003366;margin:14px 0 6px;padding:4px 8px;background:#e8f2fc;border-left:4px solid #0070c0}'
+    + 'table{width:100%;border-collapse:collapse;margin:6px 0}'
+    + 'th,td{border:1px solid #888;padding:5px 8px;font-size:10pt}'
+    + 'th{background:#f0f0f0;font-weight:700}'
+    + '.ok{color:#080;font-weight:700}'
+    + '.ng{color:#c00;font-weight:700}'
+    + '.summary{background:#fffae0;border:1px solid #d0c060;padding:8px 12px;margin:8px 0}'
+    + '.foot{font-size:9pt;color:#666;text-align:center;margin-top:18px;border-top:1px solid #ccc;padding-top:6px}'
+    + '</style></head><body>'
+    + '<h1>캐스케이드 연통 설계서</h1>'
+    + '<div style="text-align:right;font-size:10pt;color:#555">기준: KGS GC209 2026 / 작성일: ' + new Date().toLocaleDateString('ko-KR') + '</div>'
+    + '<div style="margin:8px 0;padding:8px 10px;background:#f8f8f8;border:1px solid #ccc"><b>현장명:</b> ' + site + '</div>'
+
+    + '<h2>① 단독부 (보일러측 연통) 단면적</h2>'
+    + '<table>'
+    + '<tr><th>구분</th><th>외경</th><th>대수</th><th>표시소비량</th><th>단면적 (mm²)</th><th>합계 (mm²)</th></tr>'
+    + srcRows
+    + '<tr style="background:#f0f8ff"><td colspan="5" style="text-align:right"><b>단독부 단면적 합계</b></td><td><b>' + cscFmt(sumSingle_mm2) + '</b></td></tr>'
+    + '<tr style="background:#fff0e0"><td colspan="5" style="text-align:right"><b>필요 공용부 (×1.5배)</b></td><td><b>' + cscFmt(sumSingle_15x) + '</b></td></tr>'
+    + '</table>'
+
+    + '<h2>② 공용부 (캐스케이드연통) 검토</h2>'
+    + '<table>'
+    + '<tr><th>외경</th><th>단면적 (mm²)</th><th>비율 (배)</th><th>판정</th></tr>'
+    + '<tr><td>Ø' + comD + ' mm</td><td><b>' + cscFmt(comArea) + '</b></td><td>' + cscFmt(ratio,2) + '</td><td class="' + (comOk?'ok':'ng') + '">' + (comOk?'적합 ✓':'부적합 ✗') + '</td></tr>'
+    + '</table>'
+    + '<div class="summary">기준: 공용부 단면적 ≥ 단독부 단면적 합계 × 1.5배 (KGS GC209 2.3.3.1)</div>'
+
+    + '<h2>③ 보일러실 급/환기구 검토</h2>'
+    + '<table>'
+    + '<tr><th>구분</th><th>크기 (W×H)</th><th>개수</th><th>유효개구율</th><th>유효 면적 (m²)</th><th>판정</th></tr>'
+    + '<tr><td>급기구</td><td>' + inW + ' × ' + inH + ' mm</td><td>' + airN + '</td><td>' + (airEff*100) + '%</td><td><b>' + cscFmt(inArea_m2,4) + '</b></td><td class="' + (inArea_m2>=refArea_m2?'ok':'ng') + '">' + (inArea_m2>=refArea_m2?'적합 ✓':'부적합 ✗') + '</td></tr>'
+    + '<tr><td>환기구</td><td>' + outW + ' × ' + outH + ' mm</td><td>' + airN + '</td><td>' + (airEff*100) + '%</td><td><b>' + cscFmt(outArea_m2,4) + '</b></td><td class="' + (outArea_m2>=refArea_m2?'ok':'ng') + '">' + (outArea_m2>=refArea_m2?'적합 ✓':'부적합 ✗') + '</td></tr>'
+    + '</table>'
+    + '<div class="summary">기준: 캐스케이드 단독부 단면적 합계(<b>' + cscFmt(refArea_m2,4) + ' m²</b>) 이상 권장 · 자연환기구는 유효개구율 50% 적용</div>'
+
+    + '<h2>④ 기밀시험 의무 자동 판정 (KGS GC209 2.3.3.3)</h2>'
+    + '<table>'
+    + '<tr><th style="width:50%">판정 기준</th><th>해당 여부</th></tr>'
+    + '<tr><td>① 70kW(60,200kcal) 초과 232.6kW(200,000kcal) 이하 가스보일러 연결</td><td class="' + (has70over?'ng':'ok') + '" style="text-align:center">' + (has70over?'해당 ⚠️':'미해당') + '</td></tr>'
+    + '<tr><td>② 70kW 이하 가스보일러 6대 초과 연결 (현재 ' + count70under + '대)</td><td class="' + (count70under>6?'ng':'ok') + '" style="text-align:center">' + (count70under>6?'해당 ⚠️':'미해당') + '</td></tr>'
+    + '<tr style="background:' + (leakTestRequired?'#fff3e0':'#e8f5e9') + '"><td><b>최종 판정</b></td><td style="text-align:center" class="' + (leakTestRequired?'ng':'ok') + '"><b>' + (leakTestRequired?'⚠️ 5분 이상 연막 주입 기밀시험 실시 필요':'✓ 기밀시험 의무 아님') + '</b></td></tr>'
+    + '</table>'
+
+    + '<h2>⑤ 설치기준 체크리스트 (KGS GC209 2.3.4)</h2>'
+    + '<table>'
+    + '<tr><th style="width:40px">확인</th><th>점검 항목</th></tr>'
+    + checkRows
+    + '</table>';
+
+  if (note && note.trim()) {
+    html += '<h2>비고</h2><div style="padding:10px;border:1px solid #aaa;background:#fafafa;white-space:pre-wrap">' + note + '</div>';
+  }
+
+  html += '<div class="foot">본 설계서는 KGS GC209 2026 기준에 따라 작성되었습니다.<br>가스배관전문가 툴 · Gas Pipe Sizing Calculator</div>'
+    + '</body></html>';
+
+  // 새 창에 출력 → 사용자가 인쇄/저장
+  var w = window.open('', '_blank');
+  if (!w) {
+    if (typeof snack === 'function') snack('팝업 차단 해제 후 재시도');
+    return;
+  }
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 300);
+}
+
+function cscExportDxf() {
+  cscReadSrcs();
+
+  // DXF 평면도: 공용부 가로배관 + 단독부 세로 분기 + 보일러
+  var comD = parseFloat(document.getElementById('csc-com-d').value) || 125;
+  var spacing = 250; // mm, T자관 중심간 거리 0.25m 이상
+  var comStartX = 0;
+  var comY = 1000;
+
+  var totalUnits = 0;
+  for (var i = 0; i < cscSrcs.length; i++) totalUnits += cscSrcs[i].n;
+  var comLength = (totalUnits + 1) * spacing;
+  var comEndX = comStartX + comLength;
+
+  // ★ DXF R12 (AC1009) - 가장 보편적이고 호환성 높음
+  // ezdxf, AutoCAD, DraftSight, QCAD, LibreCAD 모두 안정 지원
+  var lines = [];
+
+  // === HEADER ===
+  lines.push('0','SECTION','2','HEADER');
+  lines.push('9','$ACADVER','1','AC1009');
+  lines.push('9','$INSBASE','10','0.0','20','0.0','30','0.0');
+  lines.push('9','$EXTMIN','10','0.0','20','-500.0','30','0.0');
+  lines.push('9','$EXTMAX','10', String(comEndX + 500),'20', String(comY + 500),'30','0.0');
+  lines.push('9','$LIMMIN','10','0.0','20','0.0');
+  lines.push('9','$LIMMAX','10','12.0','20','9.0');
+  lines.push('0','ENDSEC');
+
+  // === TABLES ===
+  lines.push('0','SECTION','2','TABLES');
+
+  // VPORT
+  lines.push('0','TABLE','2','VPORT','70','1');
+  lines.push('0','VPORT','2','*ACTIVE','70','0');
+  lines.push('10','0.0','20','0.0','11','1.0','21','1.0');
+  lines.push('12', String(comEndX/2),'22', String(comY/2),'13','0.0','23','0.0');
+  lines.push('14','0.5','24','0.5','15','0.5','25','0.5');
+  lines.push('16','0.0','26','0.0','36','1.0','17','0.0','27','0.0','37','0.0');
+  lines.push('40', String(comY * 2),'41','1.5','42','50.0','43','0.0','44','0.0');
+  lines.push('50','0.0','51','0.0','71','0','72','100','73','1','74','3','75','0','76','0','77','0','78','0');
+  lines.push('0','ENDTAB');
+
+  // LTYPE
+  lines.push('0','TABLE','2','LTYPE','70','1');
+  lines.push('0','LTYPE','2','CONTINUOUS','70','0','3','Solid line','72','65','73','0','40','0.0');
+  lines.push('0','ENDTAB');
+
+  // LAYER
+  lines.push('0','TABLE','2','LAYER','70','4');
+  lines.push('0','LAYER','2','0','70','0','62','7','6','CONTINUOUS');
+  lines.push('0','LAYER','2','PIPE','70','0','62','5','6','CONTINUOUS');
+  lines.push('0','LAYER','2','TEXT','70','0','62','3','6','CONTINUOUS');
+  lines.push('0','LAYER','2','DIM','70','0','62','6','6','CONTINUOUS');
+  lines.push('0','ENDTAB');
+
+  // STYLE
+  lines.push('0','TABLE','2','STYLE','70','1');
+  lines.push('0','STYLE','2','STANDARD','70','0','40','0.0','41','1.0','50','0.0','71','0','42','2.5','3','txt','4','');
+  lines.push('0','ENDTAB');
+
+  lines.push('0','ENDSEC');
+
+  // === BLOCKS (필수 - 비어있어도 있어야 함) ===
+  lines.push('0','SECTION','2','BLOCKS');
+  lines.push('0','BLOCK','8','0','2','$MODEL_SPACE','70','0','10','0.0','20','0.0','30','0.0','3','$MODEL_SPACE','1','');
+  lines.push('0','ENDBLK','8','0');
+  lines.push('0','BLOCK','67','1','8','0','2','$PAPER_SPACE','70','0','10','0.0','20','0.0','30','0.0','3','$PAPER_SPACE','1','');
+  lines.push('0','ENDBLK','8','0');
+  lines.push('0','ENDSEC');
+
+  // === ENTITIES ===
+  lines.push('0','SECTION','2','ENTITIES');
+
+  function addLineEnt(x1, y1, x2, y2, layer) {
+    lines.push('0','LINE','8', layer || 'PIPE');
+    lines.push('10', String(x1),'20', String(y1),'30','0.0');
+    lines.push('11', String(x2),'21', String(y2),'31','0.0');
+  }
+  function addText(x, y, h, txt, layer) {
+    lines.push('0','TEXT','8', layer || 'TEXT');
+    lines.push('10', String(x),'20', String(y),'30','0.0');
+    lines.push('40', String(h));
+    lines.push('1', txt);
+  }
+  function addRect(x1, y1, x2, y2, layer) {
+    addLineEnt(x1, y1, x2, y1, layer);
+    addLineEnt(x2, y1, x2, y2, layer);
+    addLineEnt(x2, y2, x1, y2, layer);
+    addLineEnt(x1, y2, x1, y1, layer);
+  }
+
+  // 공용부 (가로 평행선)
+  addLineEnt(comStartX, comY + comD/2, comEndX, comY + comD/2, 'PIPE');
+  addLineEnt(comStartX, comY - comD/2, comEndX, comY - comD/2, 'PIPE');
+  // 양끝 막음
+  addLineEnt(comStartX, comY + comD/2, comStartX, comY - comD/2, 'PIPE');
+  addLineEnt(comEndX, comY + comD/2, comEndX, comY - comD/2, 'PIPE');
+
+  // 공용부 라벨 (영문/숫자만)
+  addText(comStartX + comLength/2 - 200, comY + comD/2 + 80, 60, 'Common Pipe D' + Math.round(comD), 'TEXT');
+
+  // 보일러 + 단독부 분기
+  var pos = comStartX + spacing;
+  var srcIdx = 0;
+  for (var i = 0; i < cscSrcs.length; i++) {
+    for (var j = 0; j < cscSrcs[i].n; j++) {
+      var singleD = cscSrcs[i].d;
+      var topY = comY - comD/2;
+      var btmY = topY - 800;
+
+      // 단독부 양면
+      addLineEnt(pos - singleD/2, topY, pos - singleD/2, btmY, 'PIPE');
+      addLineEnt(pos + singleD/2, topY, pos + singleD/2, btmY, 'PIPE');
+
+      // 보일러 박스
+      var boxW = 400, boxH = 500;
+      addRect(pos - boxW/2, btmY - boxH, pos + boxW/2, btmY, 'PIPE');
+
+      // 라벨
+      addText(pos - 80, btmY - boxH/2 + 30, 50, 'Boiler ' + (srcIdx+1), 'TEXT');
+      addText(pos - 80, btmY - boxH/2 - 50, 40, 'D' + Math.round(singleD), 'TEXT');
+
+      pos += spacing;
+      srcIdx++;
+    }
+  }
+
+  // 치수 표시
+  addText(comStartX + spacing - 60, comY - comD/2 - 950, 50, '0.25m', 'DIM');
+  addText(comStartX + 50, comY - comD/2 - 400, 50, '>=0.4m', 'DIM');
+  addText(comStartX, comY + comD + 200, 60, 'CASCADE FLUE - KGS GC209', 'TEXT');
+
+  lines.push('0','ENDSEC');
+  lines.push('0','EOF');
+
+  // DXF는 LF (\n) 또는 CRLF 모두 허용. CRLF가 가장 호환성 높음
+  var dxfText = lines.join('\r\n') + '\r\n';
+  var blob = new Blob([dxfText], {type:'application/dxf'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  var siteName = (document.getElementById('csc-site').value || '').replace(/[^a-zA-Z0-9가-힣\-_]/g, '');
+  a.download = 'cascade_' + (siteName || 'design') + '.dxf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  if (typeof snack === 'function') snack('📐 DXF 도면 다운로드 완료');
 }
 
 // 편집기에서 압력/누출공/×1.1 변경 시 거리 재계산
