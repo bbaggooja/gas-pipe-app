@@ -694,10 +694,6 @@ body.home-active #topbar .sub{ display:none !important }
         <div class="lv-quick-icon" style="background:var(--cat-kgs-bg);color:var(--cat-kgs-fg)">📑</div>
         <div class="lv-quick-label">KGS코드</div>
       </button>
-      <button class="lv-quick-item" onclick="openDocWriter();hideHome()">
-        <div class="lv-quick-icon" style="background:var(--cat-doc-bg);color:var(--cat-doc-fg)">📋</div>
-        <div class="lv-quick-label">서류작성</div>
-      </button>
       <button class="lv-quick-item" onclick="openHelp()">
         <div class="lv-quick-icon" style="background:var(--cat-help-bg);color:var(--cat-help-fg)">?</div>
         <div class="lv-quick-label">도움말</div>
@@ -733,10 +729,6 @@ body.home-active #topbar .sub{ display:none !important }
       <span class="lv-tab-icon">🧮</span>
       <span class="lv-tab-label">계산</span>
     </button>
-    <button class="lv-tab" onclick="lvTabClick(this,'doc')">
-      <span class="lv-tab-icon">📋</span>
-      <span class="lv-tab-label">서류</span>
-    </button>
     <button class="lv-tab" onclick="lvTabClick(this,'kgs')">
       <span class="lv-tab-icon">📖</span>
       <span class="lv-tab-label">기준</span>
@@ -764,7 +756,6 @@ body.home-active #topbar .sub{ display:none !important }
     <button class="qbtn" data-mode="common" onclick="openExternal('https://www.kgs.or.kr/kgs/acdc/board.do')" style="border-color:rgba(255,204,2,0.4);color:var(--warn)">📋 안전공사 기준지침</button>
     <button class="qbtn" data-mode="common" onclick="openKgs()" style="border-color:rgba(255,204,2,0.4);color:var(--warn)">📗 KGS코드조회</button>
     <button class="qbtn" data-mode="city" onclick="openSeismicCalc()" style="border-color:rgba(50,205,50,0.4);color:#66ff66">🏗️ 내진성능평가</button>
-    <button class="qbtn" data-mode="common" onclick="openDocWriter()" style="border-color:rgba(224,160,48,0.5);color:#e0a030">📋 서류작성</button>
   </div>
   <div id="tabbar" style="flex-wrap:wrap">
     <button class="tab-btn active" id="tab-setup" onclick="showTab('setup',this)">
@@ -2462,7 +2453,8 @@ body.home-active #topbar .sub{ display:none !important }
     <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:12px">
       <div style="font-size:12px;font-weight:700;color:#7dc0ff;margin-bottom:8px">③ 보일러실 급/환기구 검토</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:rgba(80,180,255,0.08);border-radius:6px;line-height:1.5">
-        💡 자연환기구(갤러리창 등) 유효개구율 50% 적용 → 캐스케이드 단면적 합계 이상 권장
+        💡 <b>KGS GC209 2.6.2.6(1):</b> 급기구 및 상부환기구의 유효단면적은 그 실에 설치된 배기통의 단면적 이상으로 한다.<br>
+        ▸ 두 가지 해석 기준을 모두 표시하니 현장 상황에 맞춰 판단하세요.
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
         <div class="input-group">
@@ -3644,9 +3636,6 @@ function lvTabClick(btn, tab) {
     if (hs) hs.scrollTop = 0;
   } else if (tab === 'calc') {
     goMain('city');
-  } else if (tab === 'doc') {
-    openDocWriter();
-    hideHome();
   } else if (tab === 'kgs') {
     openKgs();
     hideHome();
@@ -9329,25 +9318,65 @@ function cscCalc() {
   var inArea_m2 = (inW * inH / 1e6) * airEff * airN;
   var outArea_m2 = (outW * outH / 1e6) * airEff * airN;
 
-  // 비교 기준: 단독부 합계 (m²)
-  var refArea_m2 = sumSingle_m2;
-  var inOk = inArea_m2 >= refArea_m2;
-  var outOk = outArea_m2 >= refArea_m2;
-  var bothOk = inOk && outOk;
-  var airColor = bothOk ? '#00cc77' : '#ff5555';
-  var airBg = bothOk ? 'rgba(0,200,100,0.1)' : 'rgba(255,80,80,0.1)';
-  var airBorder = bothOk ? 'rgba(0,200,100,0.4)' : 'rgba(255,80,80,0.4)';
-  var airStatus = bothOk
-    ? '✅ 안전상 문제 없음 (캐스케이드 단면적 ' + cscFmt(refArea_m2, 4) + ' m² 초과)'
-    : '⚠️ 단면적 부족 검토 필요';
+  // ★ v0.19: 두 가지 비교 기준 모두 표시
+  // 기준 A) 공용부만 (단순 해석)
+  // 기준 B) 공용부 + 단독부 합산 (보수적 해석)
+  var refA_m2 = comArea / 1e6;                          // 공용부만
+  var refB_m2 = (comArea + sumSingle_mm2) / 1e6;        // 공용부 + 단독부
 
-  document.getElementById('csc-air-result').innerHTML =
-    '<div style="background:' + airBg + ';border:1px solid ' + airBorder + ';border-radius:6px;padding:8px;line-height:1.6">' +
-    '<div style="color:var(--text2)">급기구: ' + inW + '×' + inH + 'mm × ' + airN + '개 × ' + (airEff*100) + '% = <b style="color:' + (inOk?'#00cc77':'#ff5555') + '">' + cscFmt(inArea_m2, 4) + ' m²</b> ' + (inOk ? '✅' : '❌') + '</div>' +
-    '<div style="color:var(--text2)">환기구: ' + outW + '×' + outH + 'mm × ' + airN + '개 × ' + (airEff*100) + '% = <b style="color:' + (outOk?'#00cc77':'#ff5555') + '">' + cscFmt(outArea_m2, 4) + ' m²</b> ' + (outOk ? '✅' : '❌') + '</div>' +
-    '<div style="color:var(--text3);font-size:11px;margin-top:4px">기준: 캐스케이드 단독부 합계 = ' + cscFmt(refArea_m2, 4) + ' m²</div>' +
-    '<div style="font-weight:700;color:' + airColor + ';font-size:13px;margin-top:4px">' + airStatus + '</div>' +
-    '</div>';
+  var inOkA = inArea_m2 >= refA_m2;
+  var outOkA = outArea_m2 >= refA_m2;
+  var inOkB = inArea_m2 >= refB_m2;
+  var outOkB = outArea_m2 >= refB_m2;
+
+  var bothA = inOkA && outOkA;
+  var bothB = inOkB && outOkB;
+
+  function statusPill(ok) {
+    return ok
+      ? '<span style="background:rgba(0,200,100,0.2);color:#00cc77;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700">적합 ✓</span>'
+      : '<span style="background:rgba(255,80,80,0.2);color:#ff5555;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700">부적합 ✗</span>';
+  }
+
+  var html = '';
+
+  // 입력값 요약
+  html += '<div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px;margin-bottom:8px;font-size:12px;color:var(--text2);line-height:1.6">'
+    + '🪟 급기구: ' + inW + '×' + inH + 'mm × ' + airN + '개 × ' + (airEff*100) + '% = <b style="color:#7dc0ff">' + cscFmt(inArea_m2, 4) + ' m²</b><br>'
+    + '🌬️ 환기구: ' + outW + '×' + outH + 'mm × ' + airN + '개 × ' + (airEff*100) + '% = <b style="color:#7dc0ff">' + cscFmt(outArea_m2, 4) + ' m²</b>'
+    + '</div>';
+
+  // 기준 A — 공용부만
+  var bgA = bothA ? 'rgba(0,200,100,0.08)' : 'rgba(255,80,80,0.08)';
+  var bdA = bothA ? 'rgba(0,200,100,0.4)' : 'rgba(255,80,80,0.4)';
+  html += '<div style="background:' + bgA + ';border:1px solid ' + bdA + ';border-radius:6px;padding:8px;margin-bottom:8px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--text1);margin-bottom:4px">📌 기준 A · 공용부(배기통) 단면적만 비교 <span style="color:var(--text3);font-weight:400;font-size:10px">(단순 KGS 해석)</span></div>'
+    + '<div style="font-size:11px;color:var(--text2);line-height:1.6">'
+    + '비교값: 공용부 = <b>' + cscFmt(refA_m2, 4) + ' m²</b><br>'
+    + '급기구 ' + cscFmt(inArea_m2,4) + ' ≥ ' + cscFmt(refA_m2,4) + ' → ' + statusPill(inOkA) + '<br>'
+    + '환기구 ' + cscFmt(outArea_m2,4) + ' ≥ ' + cscFmt(refA_m2,4) + ' → ' + statusPill(outOkA)
+    + '</div>'
+    + '</div>';
+
+  // 기준 B — 공용부 + 단독부 합산
+  var bgB = bothB ? 'rgba(0,200,100,0.08)' : 'rgba(255,80,80,0.08)';
+  var bdB = bothB ? 'rgba(0,200,100,0.4)' : 'rgba(255,80,80,0.4)';
+  html += '<div style="background:' + bgB + ';border:1px solid ' + bdB + ';border-radius:6px;padding:8px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--text1);margin-bottom:4px">📌 기준 B · 공용부 + 단독부 합산 <span style="color:var(--text3);font-weight:400;font-size:10px">(보수적 · 안전측)</span></div>'
+    + '<div style="font-size:11px;color:var(--text2);line-height:1.6">'
+    + '비교값: 공용부(' + cscFmt(comArea/1e6,4) + ') + 단독부(' + cscFmt(sumSingle_mm2/1e6,4) + ') = <b>' + cscFmt(refB_m2, 4) + ' m²</b><br>'
+    + '급기구 ' + cscFmt(inArea_m2,4) + ' ≥ ' + cscFmt(refB_m2,4) + ' → ' + statusPill(inOkB) + '<br>'
+    + '환기구 ' + cscFmt(outArea_m2,4) + ' ≥ ' + cscFmt(refB_m2,4) + ' → ' + statusPill(outOkB)
+    + '</div>'
+    + '</div>';
+
+  // 안내 문구
+  html += '<div style="margin-top:6px;font-size:10px;color:var(--text3);line-height:1.5;padding:6px 8px;background:rgba(255,200,80,0.08);border-left:2px solid #ffb347;border-radius:4px">'
+    + '💡 KGS GC209 2.6.2.6(1) 원문은 "배기통의 단면적 이상"으로 규정되어 있어 해석에 따라 다릅니다.<br>'
+    + '<b>실무에서는 안전측 검토를 위해 기준 B(보수적 해석)를 권장</b>합니다.'
+    + '</div>';
+
+  document.getElementById('csc-air-result').innerHTML = html;
 
   // ④ 기밀시험 자동 판정 (KGS GC209 2.3.3.3)
   cscUpdateLeakTestAuto();
@@ -9454,7 +9483,9 @@ function cscExportPdf() {
   var airN = parseInt(document.getElementById('csc-air-n').value) || 1;
   var inArea_m2 = (inW * inH / 1e6) * airEff * airN;
   var outArea_m2 = (outW * outH / 1e6) * airEff * airN;
-  var refArea_m2 = sumSingle_mm2 / 1e6;
+  // ★ v0.19: 두 기준 모두 산출
+  var refA_m2 = comArea / 1e6;
+  var refB_m2 = (comArea + sumSingle_mm2) / 1e6;
 
   var checkRows = '';
   for (var j = 0; j < checks.length; j++) {
@@ -9496,11 +9527,23 @@ function cscExportPdf() {
 
     + '<h2>③ 보일러실 급/환기구 검토</h2>'
     + '<table>'
-    + '<tr><th>구분</th><th>크기 (W×H)</th><th>개수</th><th>유효개구율</th><th>유효 면적 (m²)</th><th>판정</th></tr>'
-    + '<tr><td>급기구</td><td>' + inW + ' × ' + inH + ' mm</td><td>' + airN + '</td><td>' + (airEff*100) + '%</td><td><b>' + cscFmt(inArea_m2,4) + '</b></td><td class="' + (inArea_m2>=refArea_m2?'ok':'ng') + '">' + (inArea_m2>=refArea_m2?'적합 ✓':'부적합 ✗') + '</td></tr>'
-    + '<tr><td>환기구</td><td>' + outW + ' × ' + outH + ' mm</td><td>' + airN + '</td><td>' + (airEff*100) + '%</td><td><b>' + cscFmt(outArea_m2,4) + '</b></td><td class="' + (outArea_m2>=refArea_m2?'ok':'ng') + '">' + (outArea_m2>=refArea_m2?'적합 ✓':'부적합 ✗') + '</td></tr>'
+    + '<tr><th>구분</th><th>크기 (W×H)</th><th>개수</th><th>유효개구율</th><th>유효 면적 (m²)</th></tr>'
+    + '<tr><td>급기구</td><td>' + inW + ' × ' + inH + ' mm</td><td>' + airN + '</td><td>' + (airEff*100) + '%</td><td><b>' + cscFmt(inArea_m2,4) + '</b></td></tr>'
+    + '<tr><td>환기구</td><td>' + outW + ' × ' + outH + ' mm</td><td>' + airN + '</td><td>' + (airEff*100) + '%</td><td><b>' + cscFmt(outArea_m2,4) + '</b></td></tr>'
     + '</table>'
-    + '<div class="summary">기준: 캐스케이드 단독부 단면적 합계(<b>' + cscFmt(refArea_m2,4) + ' m²</b>) 이상 권장 · 자연환기구는 유효개구율 50% 적용</div>'
+    + '<h3 style="font-size:11pt;margin:10px 0 4px">📌 기준 A · 공용부(배기통) 단면적만 비교 <span style="font-size:9pt;color:#666;font-weight:400">(단순 KGS 해석)</span></h3>'
+    + '<table>'
+    + '<tr><th style="width:50%">비교</th><th>판정</th></tr>'
+    + '<tr><td>급기구 ' + cscFmt(inArea_m2,4) + ' m² ≥ 공용부 ' + cscFmt(refA_m2,4) + ' m²</td><td class="' + (inArea_m2>=refA_m2?'ok':'ng') + '" style="text-align:center">' + (inArea_m2>=refA_m2?'적합 ✓':'부적합 ✗') + '</td></tr>'
+    + '<tr><td>환기구 ' + cscFmt(outArea_m2,4) + ' m² ≥ 공용부 ' + cscFmt(refA_m2,4) + ' m²</td><td class="' + (outArea_m2>=refA_m2?'ok':'ng') + '" style="text-align:center">' + (outArea_m2>=refA_m2?'적합 ✓':'부적합 ✗') + '</td></tr>'
+    + '</table>'
+    + '<h3 style="font-size:11pt;margin:10px 0 4px">📌 기준 B · 공용부 + 단독부 합산 <span style="font-size:9pt;color:#666;font-weight:400">(보수적 · 안전측 권장)</span></h3>'
+    + '<table>'
+    + '<tr><th style="width:50%">비교</th><th>판정</th></tr>'
+    + '<tr><td>급기구 ' + cscFmt(inArea_m2,4) + ' m² ≥ (공용+단독) ' + cscFmt(refB_m2,4) + ' m²</td><td class="' + (inArea_m2>=refB_m2?'ok':'ng') + '" style="text-align:center">' + (inArea_m2>=refB_m2?'적합 ✓':'부적합 ✗') + '</td></tr>'
+    + '<tr><td>환기구 ' + cscFmt(outArea_m2,4) + ' m² ≥ (공용+단독) ' + cscFmt(refB_m2,4) + ' m²</td><td class="' + (outArea_m2>=refB_m2?'ok':'ng') + '" style="text-align:center">' + (outArea_m2>=refB_m2?'적합 ✓':'부적합 ✗') + '</td></tr>'
+    + '</table>'
+    + '<div class="summary"><b>기준 (KGS GC209 2.6.2.6(1)):</b> 급기구 및 상부환기구의 유효단면적은 그 실에 설치된 배기통의 단면적 이상으로 한다. 자연환기구는 유효개구율 50% 적용. 실무에서는 안전측 검토를 위해 기준 B 권장.</div>'
 
     + '<h2>④ 기밀시험 의무 자동 판정 (KGS GC209 2.3.3.3)</h2>'
     + '<table>'
