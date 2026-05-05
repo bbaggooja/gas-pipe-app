@@ -14,6 +14,9 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>가스배관 관경 산출</title>
+<!-- v0.22: Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4143509079420163"
+        crossorigin="anonymous"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 .fs-modal{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
@@ -549,6 +552,39 @@ body.home-active #home-screen::-webkit-scrollbar{ width:0 }
 
 /* 타일 아이콘은 인라인 스타일로 카테고리 컬러 지정 (var(--cat-*-bg/fg)) */
 
+/* ============================================
+   v0.22: AdSense 광고 영역
+   ============================================ */
+.ad-slot{
+  display:block;
+  margin:14px 0;
+  min-height:90px;
+  background:rgba(0,0,0,0.03);
+  border:1px solid var(--lv-border);
+  border-radius:8px;
+  text-align:center;
+  overflow:hidden;
+  position:relative;
+}
+.ad-slot::before{
+  content:'광고';
+  position:absolute;left:8px;top:6px;
+  font-size:9px;color:var(--lv-text-4);
+  font-weight:600;letter-spacing:1px;
+  z-index:1;
+}
+.ad-slot ins{ display:block;width:100%;min-height:90px }
+/* 멀티플렉스 광고는 더 큰 영역 필요 */
+#ad-result.ad-slot{ min-height:280px }
+#ad-result.ad-slot ins{ min-height:280px }
+/* 다크 테마(메뉴 진입 후) 영역에서의 광고 */
+body:not(.home-active) .ad-slot{
+  background:rgba(255,255,255,0.03);
+  border:1px solid var(--border);
+}
+/* 프리미엄 사용자에게는 광고 숨김 */
+body.is-premium .ad-slot{ display:none !important }
+
 /* Pro 배지 (시안 톤) */
 .lv-pro-badge{
   font-size:10px;font-weight:600;color:var(--lv-warning);
@@ -698,6 +734,16 @@ body.home-active #topbar .sub{ display:none !important }
         <div class="lv-quick-icon" style="background:var(--cat-help-bg);color:var(--cat-help-fg)">?</div>
         <div class="lv-quick-label">도움말</div>
       </button>
+    </div>
+
+    <!-- v0.22: AdSense 광고 (홈 하단) - v0.24: 실제 슬롯 ID 적용 -->
+    <div class="ad-slot" id="ad-home">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-4143509079420163"
+           data-ad-slot="8852587530"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
     </div>
 
     <!-- 최근 계산 -->
@@ -1098,6 +1144,14 @@ body.home-active #topbar .sub{ display:none !important }
           <p>구간을 추가하면<br>결과가 여기에 표시됩니다.</p>
         </div>
       </div>
+      <!-- v0.22: AdSense 광고 (결과 하단) - v0.25: 멀티플렉스 실제 슬롯 ID 적용 -->
+      <div class="ad-slot" id="ad-result" style="margin:12px;min-height:300px">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-format="autorelaxed"
+             data-ad-client="ca-pub-4143509079420163"
+             data-ad-slot="9263561786"></ins>
+      </div>
     </div>
 
     <!-- 탭4: 저장 -->
@@ -1379,6 +1433,16 @@ body.home-active #topbar .sub{ display:none !important }
         </div>
       </div>
 
+      <!-- v0.26: AdSense 광고 (LPG 결과 하단) -->
+      <div class="ad-slot" id="ad-lpg" style="margin:12px 0">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-4143509079420163"
+             data-ad-slot="8852587530"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1531,6 +1595,16 @@ body.home-active #topbar .sub{ display:none !important }
           <div style="font-size:12px;color:var(--text3)">kg</div>
           <div style="font-size:10px;color:var(--text3);margin-top:4px" id="gs-formula-액화C"></div>
         </div>
+      </div>
+
+      <!-- v0.26: AdSense 광고 (고압가스 결과 하단) -->
+      <div class="ad-slot" id="ad-gs" style="margin:12px 0">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-4143509079420163"
+             data-ad-slot="8852587530"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
       </div>
 
     </div>
@@ -2265,6 +2339,16 @@ body.home-active #topbar .sub{ display:none !important }
         <div style="font-size:11px;font-weight:700;color:#ffb347;margin-bottom:8px">📂 저장된 방폭계산</div>
         <div id="exp-save-list"></div>
       </div>
+
+      <!-- v0.26: AdSense 광고 (방폭 모달 하단) -->
+      <div class="ad-slot" id="ad-exp" style="margin:12px 0">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-4143509079420163"
+             data-ad-slot="8852587530"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
     </div>
 
   </div>
@@ -2522,6 +2606,16 @@ body.home-active #topbar .sub{ display:none !important }
     <div style="display:flex;gap:6px">
       <button onclick="cscExportPdf()" style="flex:1;padding:11px;background:rgba(0,180,100,0.15);border:1.5px solid rgba(0,180,100,0.5);border-radius:10px;color:#00cc77;font-weight:700;font-size:13px;cursor:pointer">📄 PDF 출력</button>
       <button onclick="cscExportDxf()" style="flex:1;padding:11px;background:rgba(160,100,255,0.15);border:1.5px solid rgba(160,100,255,0.5);border-radius:10px;color:#c39fff;font-weight:700;font-size:13px;cursor:pointer">📐 DXF 도면</button>
+    </div>
+
+    <!-- v0.26: AdSense 광고 (캐스케이드 모달 하단) -->
+    <div class="ad-slot" id="ad-csc" style="margin:12px 0">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-4143509079420163"
+           data-ad-slot="8852587530"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
     </div>
 
   </div>
@@ -3145,23 +3239,44 @@ body.home-active #topbar .sub{ display:none !important }
 // ============================================================
 //  피팅 데이터 테이블
 // ============================================================
-var FITTINGS = {
-  15:  {valve:0.10, e90:0.40, e45:0.20, tee:0.70, tee14:0.20, red:0.15},
-  20:  {valve:0.15, e90:0.60, e45:0.30, tee:1.00, tee14:0.35, red:0.25},
-  25:  {valve:0.18, e90:0.80, e45:0.40, tee:1.30, tee14:0.50, red:0.30},
-  32:  {valve:0.25, e90:1.10, e45:0.55, tee:1.70, tee14:0.60, red:0.40},
-  40:  {valve:0.30, e90:1.40, e45:0.70, tee:2.10, tee14:0.70, red:0.45},
-  50:  {valve:0.35, e90:1.70, e45:0.85, tee:2.60, tee14:1.00, red:0.60},
-  65:  {valve:0.43, e90:2.00, e45:1.00, tee:3.20, tee14:1.30, red:0.70},
-  80:  {valve:0.50, e90:2.40, e45:1.20, tee:4.00, tee14:1.50, red:0.90},
-  100: {valve:0.70, e90:3.20, e45:1.60, tee:5.40, tee14:1.80, red:1.20},
-  125: {valve:0.90, e90:3.80, e45:1.90, tee:8.50, tee14:3.70, red:1.50},
-  150: {valve:1.10, e90:4.80, e45:2.40, tee:10.0, tee14:4.30, red:1.80},
-  200: {valve:1.40, e90:6.00, e45:3.00, tee:13.5, tee14:5.50, red:2.40},
-  250: {valve:1.80, e90:8.00, e45:4.00, tee:17.5, tee14:6.70, red:3.00},
-  300: {valve:2.20, e90:10.0, e45:5.00, tee:23.0, tee14:8.10, red:3.70},
-  350: {valve:2.60, e90:13.0, e45:7.50, tee:30.0, tee14:9.80, red:4.60}
+// ============================================================
+//  피팅 데이터 테이블 (등가길이 m)
+//  v0.20: 강관/PE 분리
+// ============================================================
+// 강관 (Steel) 피팅
+var FITTINGS_STEEL = {
+  15:  {valve:0.10, e90:0.40, e45:0.20, tee:0.70,  tee14:0.20, red:0.15},
+  20:  {valve:0.15, e90:0.60, e45:0.30, tee:1.00,  tee14:0.35, red:0.25},
+  25:  {valve:0.18, e90:0.80, e45:0.40, tee:1.30,  tee14:0.50, red:0.30},
+  32:  {valve:0.25, e90:1.10, e45:0.55, tee:1.70,  tee14:0.60, red:0.40},
+  40:  {valve:0.30, e90:1.40, e45:0.70, tee:2.10,  tee14:0.70, red:0.45},
+  50:  {valve:0.35, e90:1.70, e45:0.85, tee:2.60,  tee14:1.00, red:0.60},
+  65:  {valve:0.43, e90:2.00, e45:1.00, tee:3.20,  tee14:1.30, red:0.70},
+  80:  {valve:0.50, e90:2.40, e45:1.20, tee:4.00,  tee14:1.50, red:0.90},
+  100: {valve:0.70, e90:3.20, e45:1.60, tee:5.40,  tee14:1.80, red:1.20},
+  125: {valve:0.90, e90:3.80, e45:1.90, tee:8.50,  tee14:3.70, red:1.50},
+  150: {valve:1.10, e90:4.80, e45:2.40, tee:10.00, tee14:4.30, red:1.80},
+  200: {valve:1.40, e90:6.00, e45:3.00, tee:13.50, tee14:5.50, red:2.40},
+  250: {valve:1.80, e90:8.00, e45:4.00, tee:17.50, tee14:6.70, red:3.00},
+  300: {valve:2.20, e90:10.0, e45:5.00, tee:23.00, tee14:8.10, red:3.70},
+  350: {valve:2.60, e90:13.0, e45:7.50, tee:30.00, tee14:9.80, red:4.60}
 };
+
+// PE (가스용 폴리에틸렌) 피팅
+var FITTINGS_PE = {
+  63:  {valve:0.35, e90:1.70, e45:0.85, tee:2.60,  tee14:1.00, red:0.60},
+  90:  {valve:0.50, e90:2.40, e45:1.20, tee:4.00,  tee14:1.50, red:0.90},
+  110: {valve:0.70, e90:3.20, e45:1.60, tee:5.40,  tee14:1.80, red:1.20},
+  160: {valve:0.90, e90:3.80, e45:1.90, tee:8.50,  tee14:3.70, red:1.50},
+  225: {valve:1.10, e90:4.80, e45:2.40, tee:10.00, tee14:4.30, red:1.80},
+  280: {valve:1.40, e90:6.00, e45:3.00, tee:13.50, tee14:5.50, red:2.40},
+  315: {valve:1.80, e90:8.00, e45:4.00, tee:17.50, tee14:6.70, red:3.00},
+  355: {valve:2.20, e90:10.0, e45:5.00, tee:23.00, tee14:8.10, red:3.70},
+  400: {valve:2.60, e90:13.0, e45:7.50, tee:30.00, tee14:9.80, red:4.60}
+};
+
+// 하위 호환용 (기존 코드 참조)
+var FITTINGS = FITTINGS_STEEL;
 
 var STEEL_D = [
   {a:15,d:1.64},{a:20,d:2.19},{a:25,d:2.75},{a:32,d:3.62},
@@ -3169,23 +3284,36 @@ var STEEL_D = [
   {a:100,d:10.53},{a:125,d:13.01},{a:150,d:15.55},{a:200,d:20.46},
   {a:250,d:25.46},{a:300,d:30.45},{a:350,d:34.04}
 ];
+// v0.20: PE 배관 내경 데이터 정확하게 수정 (단위: cm)
 var PE_D = [
-  {a:40,d:7.17},{a:63,d:5.14},{a:75,d:7.17},{a:90,d:7.16},
-  {a:110,d:8.78},{a:125,d:13.01},{a:160,d:12.76},{a:200,d:20.46},
-  {a:225,d:17.96},{a:250,d:25.46},{a:280,d:22.38},{a:315,d:25.18},
-  {a:355,d:28.36},{a:400,d:31.96}
+  {a:63,d:5.14},   {a:75,d:7.17},   {a:90,d:7.36},   {a:110,d:9.00},
+  {a:160,d:13.18}, {a:225,d:18.50}, {a:280,d:22.92}, {a:315,d:25.78},
+  {a:355,d:29.04}, {a:400,d:32.92}
 ];
 
 // ============================================================
 //  계산 함수
 // ============================================================
-function getFitData(pipeA) {
+function getFitData(pipeA, mat) {
+  // v0.20: 재질별 분기
+  if (mat === 'pe') {
+    // v0.21: PE 75는 PE 90의 피팅 사용 (사용자 지정)
+    if (pipeA === 75) return FITTINGS_PE[90];
+
+    var peKeys = [63, 90, 110, 160, 225, 280, 315, 355, 400];
+    var bestPe = peKeys[0];
+    for (var i = 0; i < peKeys.length; i++) {
+      if (pipeA >= peKeys[i]) bestPe = peKeys[i];
+    }
+    return FITTINGS_PE[bestPe];
+  }
+  // 기본: 강관
   var keys = [15,20,25,32,40,50,65,80,100,125,150,200,250,300,350];
   var best = keys[0];
   for (var i = 0; i < keys.length; i++) {
     if (pipeA >= keys[i]) best = keys[i];
   }
-  return FITTINGS[best];
+  return FITTINGS_STEEL[best];
 }
 
 function selectPipe(dCalc, mat) {
@@ -3196,8 +3324,9 @@ function selectPipe(dCalc, mat) {
   return table[table.length - 1];
 }
 
-function calcFitLen(pipeA, f) {
-  var fd = getFitData(pipeA);
+function calcFitLen(pipeA, f, mat) {
+  // v0.20: 재질별 피팅 데이터 사용
+  var fd = getFitData(pipeA, mat);
   return f.valve * fd.valve
        + f.e90   * fd.e90
        + f.e45   * fd.e45
@@ -3434,7 +3563,7 @@ function calcSegment(Q, L_real, fittings, mat, P_init, iterative, pipeOverride, 
   var pipe2;
   if (pipeOverride) {
     pipe2 = pipeOverride;
-    var L_fit_manual = calcFitLen(pipe2.a, fittings) + L_extra;
+    var L_fit_manual = calcFitLen(pipe2.a, fittings, mat) + L_extra;
     var L_eff_manual = L_real + L_fit_manual;
     var dH_manual = calcDH(Q, L_eff_manual, pipe2.d);
     return {
@@ -3450,15 +3579,15 @@ function calcSegment(Q, L_real, fittings, mat, P_init, iterative, pipeOverride, 
     };
   }
   var pipe1 = selectPipe(calcD(Q, L_real, P0), mat);
-  var L_fit1 = calcFitLen(pipe1.a, fittings) + L_extra;
+  var L_fit1 = calcFitLen(pipe1.a, fittings, mat) + L_extra;
   var L_eff = L_real + L_fit1;
   pipe2 = selectPipe(calcD(Q, L_eff, P0), mat);
   if (iterative) {
-    var L_fit2 = calcFitLen(pipe2.a, fittings) + L_extra;
+    var L_fit2 = calcFitLen(pipe2.a, fittings, mat) + L_extra;
     L_eff = L_real + L_fit2;
     pipe2 = selectPipe(calcD(Q, L_eff, P0), mat);
   }
-  var L_fit_final = calcFitLen(pipe2.a, fittings) + L_extra;
+  var L_fit_final = calcFitLen(pipe2.a, fittings, mat) + L_extra;
   L_eff = L_real + L_fit_final;
   var dH = calcDH(Q, L_eff, pipe2.d);
   return {
@@ -3671,6 +3800,10 @@ document.addEventListener('DOMContentLoaded', function() {
   var cfEl = document.getElementById('conv-factor');
   if (cfEl) cfEl.addEventListener('input', function() { usageCalc(); });
   usageRender();
+  // v0.22: AdSense 광고 푸시 (스크립트 로딩 대기 후)
+  setTimeout(function() {
+    if (typeof pushAdsenseAds === 'function') pushAdsenseAds();
+  }, 1500);
 });
 
 function syncQ() {
@@ -4557,7 +4690,7 @@ function buildPrintHtml() {
     // 피팅 테이블
     var fitRows = '';
     var fitKeys = ['valve','e90','e45','tee','tee14','red34','tee12','reducer'];
-    var fd = getFitData(r.pipe_a);
+    var fd = getFitData(r.pipe_a, r.mat);
     var fitLens = [fd.valve, fd.e90, fd.e45, fd.tee, fd.tee14, fd.valve, fd.e90, fd.red];
     var fitAmounts = [s.fittings.valve, s.fittings.e90, s.fittings.e45, s.fittings.tee,
                       s.fittings.tee14, s.fittings.red34, s.fittings.tee12, s.fittings.reducer];
@@ -4970,7 +5103,7 @@ function buildCoxPrintHtml(p0) {
     var seg = segments[si];
     var r = seg.result;
     if (!r) continue;
-    var fd = getFitData(r.pipe_a);
+    var fd = getFitData(r.pipe_a, r.mat);
     var fKeys = ['valve','e90','e45','tee','tee14','red34','tee12','reducer'];
     var fLens = [fd.valve, fd.e90, fd.e45, fd.tee, fd.tee14, fd.valve, fd.e90, fd.red];
     var activeFits = [];
@@ -5027,6 +5160,10 @@ function _showTabDirect(name, btn) {
   if (name === 'list') renderList();
   if (name === 'result') renderResult();
   if (name === 'save') renderSaves();
+  // v0.22: 결과 탭 진입 시 AdSense 광고 푸시
+  if (name === 'result' && typeof pushAdsenseAds === 'function') {
+    setTimeout(pushAdsenseAds, 200);
+  }
 }
 
 function updateBadge() {
@@ -5056,6 +5193,8 @@ function openLpgCalc() {
   renderLpgAppliances();
   autoSimul();
   calcLpg();
+  // v0.26: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
 }
 function closeLpgCalc() {
   document.getElementById('modal-lpg').style.display = 'none';
@@ -6006,6 +6145,8 @@ function openExplosionCalc() {
   document.getElementById('modal-explosion').style.display = 'block';
   document.getElementById('modal-explosion').scrollTop = 0;
   expTab(0);
+  // v0.26: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
   // 도시가스(메탄) 기본값 자동 세팅
   if (!expCurrentGas) {
     var methane = GAS_DB.filter(function(g){ return g.name === '메탄'; })[0];
@@ -8314,6 +8455,8 @@ function dxfExport() {
 function openGasStorageCalc() {
   document.getElementById('modal-gas-storage').style.display = 'flex';
   calcGsStorage();
+  // v0.26: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
 }
 function closeGasStorageCalc() {
   document.getElementById('modal-gas-storage').style.display = 'none';
@@ -9175,6 +9318,8 @@ function openCascade() {
   }
   cscRenderSrcs();
   cscCalc();
+  // v0.26: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
 }
 
 function closeCascade() {
@@ -12357,6 +12502,26 @@ function updateLicenseFeatures() {
   // ★ Android 앱에 프리미엄 상태 전달 (배너 광고 제거용)
   if (typeof AndroidBridge !== 'undefined' && AndroidBridge.setAdFree) {
     AndroidBridge.setAdFree(LICENSE.isPremium);
+  }
+  // ★ v0.22: AdSense 광고도 프리미엄이면 숨김 (CSS body.is-premium)
+  if (LICENSE.isPremium) {
+    document.body.classList.add('is-premium');
+  } else {
+    document.body.classList.remove('is-premium');
+  }
+}
+
+// ★ v0.22: AdSense 광고 푸시 (페이지에 등장한 광고 슬롯들에 광고 로딩 요청)
+function pushAdsenseAds() {
+  if (LICENSE && LICENSE.isPremium) return;
+  try {
+    var slots = document.querySelectorAll('.ad-slot ins.adsbygoogle:not([data-pushed])');
+    for (var i = 0; i < slots.length; i++) {
+      slots[i].setAttribute('data-pushed', '1');
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    }
+  } catch(e) {
+    console.log('AdSense push error:', e);
   }
 }
 
