@@ -584,6 +584,8 @@ body:not(.home-active) .ad-slot{
 }
 /* 프리미엄 사용자에게는 광고 숨김 */
 body.is-premium .ad-slot{ display:none !important }
+/* v0.27: Android WebView에서는 AdSense 정책상 광고 숨김 */
+body.is-webview .ad-slot{ display:none !important }
 
 /* Pro 배지 (시안 톤) */
 .lv-pro-badge{
@@ -3797,6 +3799,10 @@ function lvContinueLast() {
 document.addEventListener('DOMContentLoaded', function() {
   // 앱 시작 시 홈 화면이 표시되므로 라이트 테마 적용
   document.body.classList.add('home-active');
+  // v0.27: WebView 환경 즉시 감지하여 AdSense 광고 영역 숨김 (정책 위반 방지)
+  if (typeof isAndroidWebView === 'function' && isAndroidWebView()) {
+    document.body.classList.add('is-webview');
+  }
   var cfEl = document.getElementById('conv-factor');
   if (cfEl) cfEl.addEventListener('input', function() { usageCalc(); });
   usageRender();
@@ -12511,9 +12517,33 @@ function updateLicenseFeatures() {
   }
 }
 
+// ★ v0.27: Android WebView 감지 함수
+// AdSense 정책상 앱 내 WebView에서는 광고를 표시하면 안 됨 (계정 정지 위험)
+function isAndroidWebView() {
+  // 1) AndroidBridge JS 인터페이스 존재 (가장 확실한 신호)
+  if (typeof AndroidBridge !== 'undefined') return true;
+  // 2) User-Agent에 ' wv)' 또는 'WebView' 포함 (Android WebView 표준 마커)
+  var ua = navigator.userAgent || '';
+  if (/; wv\)/.test(ua)) return true;
+  if (/Version\/[\d.]+ Chrome\/[\d.]+ Mobile Safari/.test(ua) && /Android/.test(ua) && !/Chrome\/[\d.]+ Mobile Safari\/[\d.]+ /.test(ua)) {
+    // Chrome 모바일이지만 별도 Chrome 표시가 없는 경우 (구형 WebView)
+  }
+  // 3) file:// 프로토콜 (앱 내부 자산 로드)
+  if (location.protocol === 'file:') return true;
+  // 4) window.Android 같은 네이티브 인터페이스
+  if (typeof window.Android !== 'undefined') return true;
+  return false;
+}
+
 // ★ v0.22: AdSense 광고 푸시 (페이지에 등장한 광고 슬롯들에 광고 로딩 요청)
+// ★ v0.27: WebView에서는 표시하지 않음 (정책 위반 방지)
 function pushAdsenseAds() {
   if (LICENSE && LICENSE.isPremium) return;
+  // ★ v0.27: WebView 환경에서는 AdSense 광고 비활성화 (정책 위반 방지)
+  if (isAndroidWebView()) {
+    document.body.classList.add('is-webview');
+    return;
+  }
   try {
     var slots = document.querySelectorAll('.ad-slot ins.adsbygoogle:not([data-pushed])');
     for (var i = 0; i < slots.length; i++) {
