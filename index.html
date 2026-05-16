@@ -4100,6 +4100,17 @@ function addSegment() {
   if (!q || q <= 0) { snack('유량(Q)을 입력하세요'); return; }
   if (!l || l <= 0) { snack('실관길이(L)를 입력하세요'); return; }
 
+  // v0.40: 무료 사용자는 구간 1개까지만 추가 가능 (월구독 시 무제한)
+  var maxSeg = (LICENSE && LICENSE.features && LICENSE.features.maxSegments) || 1;
+  if (segments.length >= maxSeg) {
+    if (typeof showUpgradePrompt === 'function') {
+      showUpgradePrompt('구간 추가 (현재 ' + segments.length + '개 / 무료 ' + maxSeg + '개 제한)', 'monthly');
+    } else {
+      snack('무료 사용자는 ' + maxSeg + '개 구간까지 추가 가능합니다');
+    }
+    return;
+  }
+
   for (var i = 0; i < segments.length; i++) {
     if (segments[i].name === name) { snack('이미 존재하는 구간명입니다'); return; }
   }
@@ -6303,6 +6314,9 @@ var expAbsPressure = 201325; // 0.1MPa(게이지) + 101325
 var expCurrentGas = null; // 선택된 가스 DB 객체
 
 function openExplosionCalc() {
+  // v0.40: 모달 열 때 세션 잠금 플래그 리셋 (이전 세션 잠금 해제 상태 초기화)
+  _explosionSessionUnlocked = false;
+  // 진입 자체는 free 허용 (사용자가 입력 후 결과를 보려고 할 때 paywall)
   // v0.35: 다른 풀스크린 모달 자동 닫기
   if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-explosion');
   document.getElementById('modal-explosion').style.display = 'block';
@@ -6679,6 +6693,8 @@ function expCalcReleaseRateNew(mw, gamma, z, T_C, cd, k, absP, holeMm2) {
   return Math.max(0, (Wkg || 0));
 }
 
+// v0.40: 방폭 세션 잠금 플래그 (모달 열 때 false로 리셋)
+var _explosionSessionUnlocked = false;
 function expCalc() {
   var mw    = parseFloat(document.getElementById('exp-mw').value);
   var rhoG_db = parseFloat(document.getElementById('exp-rhog').value); // DB값(0℃ 기준, 참고용)
@@ -6692,6 +6708,22 @@ function expCalc() {
   var absP  = expAbsPressure;
 
   if (!mw || !rhoG_db || !lel) return;
+
+  // v0.40: 라이선스 체크 - 결과 표시 시점에 1건 차감 또는 paywall
+  if (!_explosionSessionUnlocked && !LICENSE_TEST_MODE) {
+    if (isPremium()) {
+      _explosionSessionUnlocked = true; // 월구독자: 무제한
+    } else if (explosionCredits() > 0) {
+      if (consumeExplosionCredit()) {
+        _explosionSessionUnlocked = true;
+        snack('방폭거리 1건 사용 (남은 횟수: ' + explosionCredits() + ')');
+      }
+    } else {
+      // 결제 필요
+      if (typeof showUpgradePrompt === 'function') showUpgradePrompt('방폭거리 계산', 'explosion');
+      return;  // 결과 계산/표시 차단
+    }
+  }
 
   // KGS GC101 3.5.1.4: ρg = Pa×M / (R×Ta) — 주변온도 기준 가스밀도
   var Ta = T_C + 273.15;
@@ -12659,6 +12691,51 @@ function dwProcessTemplate() {
 </div>
 
 <!-- ============================================================
+     v0.40: 결제 안내 모달 (Paywall)
+     ============================================================ -->
+<div id="modal-paywall" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1100;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--bg2);border:1px solid rgba(255,200,80,0.4);border-radius:16px;width:100%;max-width:420px;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#2a1a05,#4a3010);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,200,80,0.3)">
+      <div style="font-size:14px;font-weight:800;color:#ffd966">🔒 프리미엄 기능</div>
+      <button onclick="closePaywall()" style="background:none;border:none;color:#ffd966;font-size:22px;cursor:pointer;padding:2px 8px">✕</button>
+    </div>
+    <div style="padding:18px 16px">
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:14px;color:var(--text2)"><b id="paywall-feature" style="color:#ffd966">이 기능</b>은 결제가 필요합니다</div>
+        <div id="paywall-credit-info" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+      </div>
+
+      <!-- 월 정기결제 -->
+      <button onclick="startSubscriptionPurchase()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:linear-gradient(135deg,rgba(0,212,255,0.18),rgba(0,150,255,0.10));border:2px solid rgba(0,212,255,0.5);border-radius:12px;color:var(--text1);cursor:pointer;margin-bottom:10px">
+        <div style="text-align:left">
+          <div style="font-size:14px;font-weight:800;color:#7dd8ff">월 정기결제</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">모든 유료 기능 무제한 (출력·전기방식·무제한 구간 등)</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:900;color:#7dd8ff">₩6,900<span style="font-size:11px;font-weight:500;color:var(--text3)">/월</span></div>
+        </div>
+      </button>
+
+      <!-- 방폭거리 건당결제 (mode='explosion'일 때만 표시) -->
+      <button id="paywall-explosion-row" onclick="startExplosionPurchase()" style="display:none;width:100%;align-items:center;justify-content:space-between;padding:14px 16px;background:linear-gradient(135deg,rgba(255,160,50,0.18),rgba(255,107,53,0.10));border:2px solid rgba(255,160,50,0.5);border-radius:12px;color:var(--text1);cursor:pointer;margin-bottom:10px">
+        <div style="text-align:left">
+          <div style="font-size:14px;font-weight:800;color:#ffb347">방폭거리 건당결제</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">방폭거리 계산 1건 (소비형)</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:900;color:#ffb347">₩4,900<span style="font-size:11px;font-weight:500;color:var(--text3)">/1건</span></div>
+        </div>
+      </button>
+
+      <div style="font-size:10px;color:var(--text3);text-align:center;line-height:1.5;margin-top:10px">
+        결제는 Google Play를 통해 진행되며, 동일 Google 계정으로 로그인하면 웹에서도 자동 인식됩니다.<br>
+        구독은 언제든 Play 스토어 → 구독에서 취소할 수 있습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
      v0.36: 전기방식 설계서(희생양극법) 계산 모달 (modal-corrosion)
      ============================================================ -->
 <div id="modal-corrosion" class="fs-modal" style="display:none;position:fixed;inset:0;background:var(--bg1);z-index:550;overflow-y:auto;-webkit-overflow-scrolling:touch">
@@ -12964,6 +13041,11 @@ function corrCalc(){
   }
 }
 function openCorrosionCalc(){
+  // v0.40: 전기방식은 월구독 전용 기능
+  if (!LICENSE_TEST_MODE && !isPremium()) {
+    if (typeof showUpgradePrompt === 'function') showUpgradePrompt('전기방식 계산', 'monthly');
+    return;
+  }
   // v0.35: 다른 풀스크린 모달 자동 닫기
   if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-corrosion');
   var m = document.getElementById('modal-corrosion');
@@ -13674,32 +13756,77 @@ try {
 // ══════════════════════════════════
 var LICENSE_TEST_MODE = true; // ★ true=테스트(무료허용), false=정식(결제필요)
 
+// v0.40 가격 정책 (월구독: 모든 유료기능 / 건당: 방폭거리 1회)
+var PRICE_MONTHLY = 6900;
+var PRICE_EXPLOSION = 4900;
+var PRODUCT_ID_MONTHLY = 'monthly_premium';
+var PRODUCT_ID_EXPLOSION = 'explosion_single';
+
 var LICENSE = {
-  status: 'free',   // free / trial / premium
+  status: 'free',                     // free / premium
+  plan: 'free',                       // free / monthly
   userId: null,
   email: null,
   expiry: null,
-  plan: null,
+  subscriptionActiveUntil: null,      // 월구독 만료일 (timestamp ms) - null이면 미가입
+  subscriptionOrderId: null,          // Google Play 구독 토큰
+  explosionCredits: 0,                // 방폭거리 남은 건당 횟수
   isPremium: false,
   features: {
-    maxSegments: 5,
+    maxSegments: 1,                   // v0.40: 무료=1구간, 유료=무제한
     explosion: false,
+    electrical: false,
     sprinkler: false,
+    cascade: false,
     dxf: false,
     docWriter: false,
-    pdf: false
+    pdf: false,
+    excel: false
   }
 };
 
+// v0.40: 월구독 활성 여부
+function isPremium() {
+  if (LICENSE_TEST_MODE) return true;
+  if (LICENSE.plan === 'monthly' && LICENSE.subscriptionActiveUntil) {
+    return Date.now() < LICENSE.subscriptionActiveUntil;
+  }
+  return false;
+}
+// v0.40: 방폭거리 남은 건당 횟수
+function explosionCredits() {
+  if (LICENSE_TEST_MODE) return 99;
+  return (LICENSE && typeof LICENSE.explosionCredits === 'number') ? LICENSE.explosionCredits : 0;
+}
+// v0.40: 방폭거리 사용 가능 여부 (월구독 OR 잔여 credit)
+function canUseExplosion() {
+  return isPremium() || explosionCredits() > 0;
+}
+// v0.40: 방폭 1건 소진 (결과 표시 시점에 호출)
+function consumeExplosionCredit() {
+  if (LICENSE_TEST_MODE) return true;
+  if (isPremium()) return true;  // 월구독자는 차감하지 않음
+  if (explosionCredits() <= 0) return false;
+  LICENSE.explosionCredits--;
+  // Firestore에도 차감 반영
+  try {
+    if (typeof fbDb !== 'undefined' && fbDb && LICENSE.userId && typeof firebase !== 'undefined') {
+      fbDb.collection('licenses').doc(LICENSE.userId).update({
+        explosionCredits: firebase.firestore.FieldValue.increment(-1)
+      });
+    }
+  } catch(e){ console.log('credit decrement err:', e); }
+  return true;
+}
+
 function updateLicenseFeatures() {
-  if (LICENSE.status === 'premium') {
-    LICENSE.features = { maxSegments: 999, explosion:true, sprinkler:true, dxf:true, docWriter:true, pdf:true };
+  if (isPremium()) {
+    LICENSE.status = 'premium';
+    LICENSE.features = { maxSegments: 999, explosion:true, electrical:true, sprinkler:true, cascade:true, dxf:true, docWriter:true, pdf:true, excel:true };
     LICENSE.isPremium = true;
-  } else if (LICENSE.status === 'trial') {
-    LICENSE.features = { maxSegments: 20, explosion:true, sprinkler:true, dxf:true, docWriter:false, pdf:true };
-    LICENSE.isPremium = false;
   } else {
-    LICENSE.features = { maxSegments: 5, explosion:false, sprinkler:false, dxf:false, docWriter:false, pdf:false };
+    LICENSE.status = 'free';
+    LICENSE.features = { maxSegments: 1, explosion:false, electrical:false, sprinkler:false, cascade:false, dxf:false, docWriter:false, pdf:false, excel:false };
     LICENSE.isPremium = false;
   }
   // ★ Android 앱에 프리미엄 상태 전달 (배너 광고 제거용)
@@ -13795,28 +13922,79 @@ function requireOutput(featureName) {
   }
   // ★ 테스트 모드: 로그인만 하면 출력 허용
   if (LICENSE_TEST_MODE) return true;
-  // ★ 정식 모드: 프리미엄(정기결제) 필수
-  if (LICENSE.status !== 'premium') {
-    showUpgradePrompt(featureName);
+  // ★ v0.40: 월구독자만 출력/유료기능 사용 가능
+  if (!isPremium()) {
+    showUpgradePrompt(featureName, 'monthly');
     return false;
   }
   return true;
 }
 
-function showUpgradePrompt(featureName) {
-  if (confirm(featureName + ' 기능은 프리미엄 구독이 필요합니다.\n\n월 9,900원 — 모든 기능 무제한\n\n구독하시겠습니까?')) {
-    if (typeof AndroidBridge !== 'undefined' && AndroidBridge.startSubscription) {
-      AndroidBridge.startSubscription('premium_monthly');
-    } else {
-      // 웹 환경 → 로그인 후 안내
-      if (!LICENSE.userId) {
-        firebaseLogin();
-      } else {
-        snack('Android 앱에서 구독 후 동일 계정으로 로그인하세요');
-      }
+// v0.40: 결제 모달 표시 (월구독 + 방폭거리 한정 건당)
+// mode: 'monthly' = 월구독만 / 'explosion' = 방폭거리(월구독 + 건당 둘 다 표시)
+function showUpgradePrompt(featureName, mode) {
+  mode = mode || 'monthly';
+  // 로그인이 안 되어있으면 먼저 로그인 유도
+  if (!LICENSE.userId) {
+    if (confirm(featureName + ' 기능을 사용하려면 먼저 로그인이 필요합니다.\n\n로그인하시겠습니까?')) {
+      firebaseLogin();
     }
+    return;
+  }
+  var modal = document.getElementById('modal-paywall');
+  if (!modal) return;
+  document.getElementById('paywall-feature').textContent = featureName || '이 기능';
+  // 건당결제 행은 방폭거리일 때만 노출
+  var explosionRow = document.getElementById('paywall-explosion-row');
+  if (explosionRow) explosionRow.style.display = (mode === 'explosion') ? 'flex' : 'none';
+  // 현재 잔여 credit 표시
+  var creditInfo = document.getElementById('paywall-credit-info');
+  if (creditInfo) {
+    creditInfo.textContent = (mode === 'explosion')
+      ? ('남은 방폭 건당 횟수: ' + explosionCredits() + '회')
+      : '';
+  }
+  modal.style.display = 'flex';
+}
+function closePaywall(){
+  var m = document.getElementById('modal-paywall');
+  if (m) m.style.display = 'none';
+}
+function startSubscriptionPurchase(){
+  closePaywall();
+  // Android 네이티브 Billing 호출 (v0.41에서 BillingClient 통합 예정)
+  if (typeof AndroidBridge !== 'undefined' && AndroidBridge.startPurchase) {
+    AndroidBridge.startPurchase(PRODUCT_ID_MONTHLY);
+  } else if (typeof AndroidBridge !== 'undefined' && AndroidBridge.startSubscription) {
+    AndroidBridge.startSubscription(PRODUCT_ID_MONTHLY);
+  } else {
+    alert('월 정기결제(₩' + PRICE_MONTHLY.toLocaleString('ko-KR') + ')는 Android 앱에서 가능합니다.\n\nGoogle Play 결제 후 동일 Google 계정으로 웹에서도 자동 인식됩니다.');
   }
 }
+function startExplosionPurchase(){
+  closePaywall();
+  if (typeof AndroidBridge !== 'undefined' && AndroidBridge.startPurchase) {
+    AndroidBridge.startPurchase(PRODUCT_ID_EXPLOSION);
+  } else {
+    alert('방폭거리 건당결제(₩' + PRICE_EXPLOSION.toLocaleString('ko-KR') + ')는 Android 앱에서 가능합니다.');
+  }
+}
+// 네이티브에서 결제 완료 콜백
+window.onPurchaseResult = function(success, productId, orderId){
+  if (!success) {
+    snack('결제가 완료되지 않았습니다');
+    return;
+  }
+  if (productId === PRODUCT_ID_MONTHLY) {
+    snack('월 정기결제가 활성화되었습니다');
+    // Firestore에서 라이선스 다시 로드
+    if (typeof refreshLicense === 'function') refreshLicense();
+  } else if (productId === PRODUCT_ID_EXPLOSION) {
+    LICENSE.explosionCredits = (LICENSE.explosionCredits || 0) + 1;
+    snack('방폭거리 1회 이용권이 충전되었습니다');
+  }
+  updateLicenseFeatures();
+};
 
 // ══════════════════════════════════
 //  Firebase 인증 (Google 로그인)
