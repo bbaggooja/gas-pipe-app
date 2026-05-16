@@ -587,6 +587,31 @@ body.is-premium .ad-slot{ display:none !important }
 /* v0.27: Android WebView에서는 AdSense 정책상 광고 숨김 */
 body.is-webview .ad-slot{ display:none !important }
 
+/* ============================================
+   v0.35: 상단 quickbar 메뉴 항상 노출 (모달 위에도)
+   ============================================ */
+/* topbar는 모달보다 항상 위에 */
+#topbar{ z-index:1001 !important }
+
+/* 메인 작업 모드(홈 아닐 때) — quickbar를 화면 상단에 고정 */
+body:not(.home-active) #quickbar{
+  position:fixed !important;
+  top:var(--qb-topbar-h, 50px) !important;
+  left:0 !important;
+  right:0 !important;
+  z-index:1000 !important;
+  background:var(--bg1) !important;
+  box-shadow:0 2px 6px rgba(0,0,0,0.18);
+}
+/* 고정된 quickbar 영역 확보 */
+body:not(.home-active) #main-work{
+  padding-top:var(--qb-quickbar-h, 50px) !important;
+}
+/* 풀스크린 모달들은 topbar + quickbar 아래에서 시작 (작은 overlay 류 제외) */
+body:not(.home-active) [id^="modal-"]:not(.modal-overlay):not(#modal-menu):not(#modal-seg){
+  top:var(--qb-offset, 100px) !important;
+}
+
 /* Pro 배지 (시안 톤) */
 .lv-pro-badge{
   font-size:10px;font-weight:600;color:var(--lv-warning);
@@ -698,6 +723,16 @@ body.home-active #topbar .sub{ display:none !important }
       <div class="lv-notif" onclick="openHelp()">🔔</div>
     </div>
 
+    <!-- v0.34: 홈 상단 배너 광고 (첫 화면에서 즉시 노출) -->
+    <div class="ad-slot" id="ad-home-top" style="margin:8px 0 4px;min-height:100px">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-4143509079420163"
+           data-ad-slot="8852587530"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    </div>
+
     <!-- Featured: 오늘의 작업 -->
     <div class="lv-featured" onclick="lvContinueLast()">
       <div class="lv-feat-label">오늘의 작업</div>
@@ -731,6 +766,10 @@ body.home-active #topbar .sub{ display:none !important }
       <button class="lv-quick-item" onclick="openKgs();hideHome()">
         <div class="lv-quick-icon" style="background:var(--cat-kgs-bg);color:var(--cat-kgs-fg)">📑</div>
         <div class="lv-quick-label">KGS코드</div>
+      </button>
+      <button class="lv-quick-item" onclick="openFeeModal();hideHome()">
+        <div class="lv-quick-icon" style="background:rgba(255,160,80,0.15);color:#ffb070">💰</div>
+        <div class="lv-quick-label">수수료</div>
       </button>
       <button class="lv-quick-item" onclick="openHelp()">
         <div class="lv-quick-icon" style="background:var(--cat-help-bg);color:var(--cat-help-fg)">?</div>
@@ -795,6 +834,7 @@ body.home-active #topbar .sub{ display:none !important }
     <button class="qbtn" data-mode="city" onclick="openMonthlyCalc()">📊 월사용량 계산</button>
     <button class="qbtn" data-mode="city" onclick="openLeakTest()" style="border-color:rgba(0,180,255,0.5);color:#7dd8ff">🔬 기밀시험시간</button>
     <button class="qbtn" data-mode="city" onclick="openExplosionCalc()" style="border-color:rgba(255,160,50,0.5);color:#ffb347">💥 방폭거리</button>
+    <button class="qbtn" data-mode="city" onclick="openCorrosionCalc()" style="border-color:rgba(255,200,80,0.5);color:#ffd966">⚡ 전기방식</button>
     <button class="qbtn" data-mode="city" onclick="openCascade()" style="border-color:rgba(80,180,255,0.5);color:#7dc0ff">🌬️ 캐스케이드</button>
     <button class="qbtn" data-mode="lpg" onclick="openLpgCalc()" style="border-color:rgba(255,107,53,0.4);color:#ff9f7f">🔥 LPG 사용량</button>
     <button class="qbtn" data-mode="lpg" onclick="openSprinklerCalc()" style="border-color:rgba(255,80,80,0.4);color:#ff6666">💦 살수장치</button>
@@ -803,7 +843,17 @@ body.home-active #topbar .sub{ display:none !important }
     <button class="qbtn" data-mode="common" onclick="openUnitConvert()" style="border-color:rgba(0,255,157,0.4);color:var(--accent2)">⚖️ 단위환산</button>
     <button class="qbtn" data-mode="common" onclick="openExternal('https://www.kgs.or.kr/kgs/acdc/board.do')" style="border-color:rgba(255,204,2,0.4);color:var(--warn)">📋 안전공사 기준지침</button>
     <button class="qbtn" data-mode="common" onclick="openKgs()" style="border-color:rgba(255,204,2,0.4);color:var(--warn)">📗 KGS코드조회</button>
+    <button class="qbtn" data-mode="common" onclick="openFeeModal()" style="border-color:rgba(255,160,80,0.5);color:#ffb070">💰 수수료계산</button>
     <button class="qbtn" data-mode="city" onclick="openSeismicCalc()" style="border-color:rgba(50,205,50,0.4);color:#66ff66">🏗️ 내진성능평가</button>
+  </div>
+  <!-- v0.34: 메인 작업화면 상단 배너 광고 (모든 탭에서 노출) -->
+  <div class="ad-slot" id="ad-mainwork-top" style="margin:6px 8px;min-height:100px">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-4143509079420163"
+         data-ad-slot="8852587530"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
   </div>
   <div id="tabbar" style="flex-wrap:wrap">
     <button class="tab-btn active" id="tab-setup" onclick="showTab('setup',this)">
@@ -1272,6 +1322,15 @@ body.home-active #topbar .sub{ display:none !important }
           <div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.4" id="m-formula-industry"></div>
         </div>
       </div>
+      <!-- v0.33: 월사용량 모달 배너 광고 -->
+      <div class="ad-slot" id="ad-monthly" style="margin:12px 0">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-4143509079420163"
+             data-ad-slot="8852587530"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
     </div>
   </div>
 </div>
@@ -1665,6 +1724,16 @@ body.home-active #topbar .sub{ display:none !important }
       <!-- 전체 환산표 -->
       <div style="font-size:11px;font-weight:700;color:var(--accent2);margin-bottom:6px">전체 환산 결과</div>
       <div id="uc-all-results" style="background:rgba(0,0,0,0.3);border-radius:10px;padding:10px;font-size:11px;line-height:2"></div>
+
+      <!-- v0.33: 단위환산 모달 배너 광고 -->
+      <div class="ad-slot" id="ad-unit" style="margin:12px 0">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-4143509079420163"
+             data-ad-slot="8852587530"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
     </div>
   </div>
 </div>
@@ -1816,6 +1885,15 @@ body.home-active #topbar .sub{ display:none !important }
         </div>
       </div>
 
+      <!-- v0.33: 기밀시험 모달 배너 광고 -->
+      <div class="ad-slot" id="ad-leak" style="margin:12px 0">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-4143509079420163"
+             data-ad-slot="8852587530"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
     </div>
   </div>
 </div>
@@ -2658,6 +2736,16 @@ body.home-active #topbar .sub{ display:none !important }
     <!-- 결과 목록 -->
     <div id="kgs-list" style="display:flex;flex-direction:column;gap:6px"></div>
 
+    <!-- v0.33: KGS 모달 배너 광고 -->
+    <div class="ad-slot" id="ad-kgs" style="margin:12px 0">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-4143509079420163"
+           data-ad-slot="8852587530"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    </div>
+
     <!-- 외부 링크 -->
     <div style="margin-top:12px;text-align:center">
       <button onclick="openExternal('https://cyber.kgs.or.kr/kgscode.Index.do')" style="padding:10px 20px;background:rgba(0,200,100,0.08);border:1px solid rgba(0,200,100,0.3);border-radius:10px;color:#70d070;font-size:12px;font-weight:700;cursor:pointer">
@@ -2885,6 +2973,16 @@ body.home-active #topbar .sub{ display:none !important }
         <div style="font-size:12px;font-family:monospace;color:#00ff9d;word-break:break-all">https://bbaggooja.github.io/gas-pipe-app/</div>
         <div style="font-size:10px;color:var(--text3);margin-top:4px">PC 브라우저에서 접속 → 설치 아이콘(⊕) 클릭하여 앱으로 사용</div>
       </div>
+    </div>
+
+    <!-- v0.33: 도움말 모달 배너 광고 -->
+    <div class="ad-slot" id="ad-help" style="margin:12px 0">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-4143509079420163"
+           data-ad-slot="8852587530"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
     </div>
   </div>
 </div>
@@ -3232,6 +3330,16 @@ body.home-active #topbar .sub{ display:none !important }
         <div id="sr-summary"></div>
       </div>
       <button class="btn btn-primary" onclick="exportSeismicPdf()" style="margin-bottom:12px">📄 PDF 출력</button>
+
+      <!-- v0.33: 내진성능평가 모달 배너 광고 -->
+      <div class="ad-slot" id="ad-seismic" style="margin:12px 0">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-4143509079420163"
+             data-ad-slot="8852587530"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
     </div>
   </div>
 </div>
@@ -3810,7 +3918,34 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() {
     if (typeof pushAdsenseAds === 'function') pushAdsenseAds();
   }, 1500);
+  // v0.35: topbar/quickbar 실측 높이를 CSS 변수에 반영 (모달이 quickbar 아래에서 시작하도록)
+  if (typeof updateQuickbarOffsets === 'function') updateQuickbarOffsets();
+  window.addEventListener('resize', function(){ if(typeof updateQuickbarOffsets==='function') updateQuickbarOffsets(); });
 });
+
+// v0.35: topbar/quickbar 높이 동적 측정 후 CSS 변수 갱신
+function updateQuickbarOffsets(){
+  var tb = document.getElementById('topbar');
+  var qb = document.getElementById('quickbar');
+  if(!tb || !qb) return;
+  var tbH = tb.offsetHeight || 50;
+  // quickbar는 main-work가 display:none이면 offsetHeight=0이 될 수 있으므로 임시로 보이게 해서 측정
+  var mw = document.getElementById('main-work');
+  var savedDisp = mw ? mw.style.display : '';
+  var savedVis = mw ? mw.style.visibility : '';
+  if(mw && savedDisp === 'none'){
+    mw.style.visibility = 'hidden';
+    mw.style.display = 'flex';
+  }
+  var qbH = qb.offsetHeight || 50;
+  if(mw && savedDisp === 'none'){
+    mw.style.display = savedDisp;
+    mw.style.visibility = savedVis;
+  }
+  document.documentElement.style.setProperty('--qb-topbar-h', tbH + 'px');
+  document.documentElement.style.setProperty('--qb-quickbar-h', qbH + 'px');
+  document.documentElement.style.setProperty('--qb-offset', (tbH + qbH) + 'px');
+}
 
 function syncQ() {
   var kcal = parseFloat(document.getElementById('seg-kcal').value);
@@ -5195,6 +5330,8 @@ var lpgState = {
 };
 
 function openLpgCalc() {
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-lpg');
   document.getElementById('modal-lpg').style.display = 'flex';
   renderLpgAppliances();
   autoSimul();
@@ -5460,8 +5597,12 @@ var UC_CATS = {
 var ucCurrentCat = 'pressure';
 
 function openUnitConvert() {
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-unit');
   document.getElementById('modal-unit').style.display = 'flex';
   ucSetCategory();
+  // v0.33: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
 }
 function closeUnitConvert() {
   document.getElementById('modal-unit').style.display = 'none';
@@ -5527,6 +5668,8 @@ var ltRows = [];
 var ltNextId = 1;
 
 function openLeakTest() {
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-leak');
   document.getElementById('modal-leak').style.display = 'flex';
   if (ltRows.length === 0) {
     ltRows = [
@@ -5537,6 +5680,8 @@ function openLeakTest() {
   }
   ltCalcTestPressure();
   ltRenderRows();
+  // v0.33: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
 }
 // ─── 질소 용기 수 계산 (이상기체 상태방정식 기반) ───
 function calcN2() {
@@ -5811,12 +5956,12 @@ var GAS_DB = [
   {name:'네온',eng:'Neon',formula:'Ne',mw:20.183,rhoG:0.8245,lel:null,uel:null,vaporP:null,boilPt:-246.1,gamma:1.6417713152676803,rhoRel:0.696,rhoL:1.248,meltPt:null},
   {name:'니켈카르보닐',eng:'Nickel Carbonyl(Nickeltetracarbonyl)',formula:'Ni(CO)4',mw:170.75199999999998,rhoG:6.531,lel:null,uel:null,vaporP:42.0,boilPt:42.4,gamma:null,rhoRel:5.95,rhoL:1.3,meltPt:-19.3},
   {name:'이산화질소',eng:'Nitorgen Dioxide',formula:'NO2',mw:46.006,rhoG:null,lel:null,uel:null,vaporP:101.325,boilPt:21.2,gamma:null,rhoRel:2.62,rhoL:3.394,meltPt:null},
-  {name:'산화질소',eng:'Nitric Oxide(Nitrogen monoxide)',formula:'NO',mw:30.006,rhoG:1.2278,lel:null,uel:null,vaporP:null,boilPt:-151.8,gamma:1.3989585419587423,rhoRel:1.036,rhoL:1.269,meltPt:null},
+  {name:'산화질소',eng:'Nitric Oxide(Nitrogen monoxide)',formula:'NO',mw:30.006,rhoG:1.2278,lel:null,uel:null,vaporP:null,boilPt:-151.8,gamma:1.3989585419587423,rhoRel:1.036,rhoL:1.269,meltPt:null},
   {name:'질소',eng:'Nitrogen',formula:'N2',mw:28.0134,rhoG:1.1455,lel:null,uel:null,vaporP:null,boilPt:-195.8,gamma:1.4065800162469537,rhoRel:0.967,rhoL:0.808,meltPt:null},
   {name:'질소트리플루오르화물',eng:'Nitrogen Trifluoride',formula:'NF3',mw:71.002,rhoG:2.96,lel:null,uel:null,vaporP:null,boilPt:-129.0,gamma:null,rhoRel:2.46,rhoL:1.531,meltPt:null},
   {name:'질소트리산화물',eng:'Nitrogen Trioxide',formula:'N2O3',mw:76.012,rhoG:null,lel:null,uel:null,vaporP:2170.0,boilPt:-30.0,gamma:null,rhoRel:null,rhoL:1.447,meltPt:null},
   {name:'니트로실염화물',eng:'Nitrosyl Chloride',formula:'NOCl',mw:65.459,rhoG:2.741,lel:null,uel:null,vaporP:288.0,boilPt:-5.4,gamma:null,rhoRel:2.31,rhoL:1.417,meltPt:null},
-  {name:'산화질소',eng:'Nitrous Oxide(Dinitrogen oxide)',formula:'N2O',mw:44.013,rhoG:1.8122,lel:null,uel:null,vaporP:5238.0,boilPt:-88.5,gamma:1.3031329381879762,rhoRel:1.53,rhoL:0.913,meltPt:null},
+  {name:'산화질소',eng:'Nitrous Oxide(Dinitrogen oxide)',formula:'N2O',mw:44.013,rhoG:1.8122,lel:null,uel:null,vaporP:5238.0,boilPt:-88.5,gamma:1.3031329381879762,rhoRel:1.53,rhoL:0.913,meltPt:null},
   {name:'산소',eng:'Oxygen',formula:'O2',mw:31.999,rhoG:1.309,lel:null,uel:null,vaporP:null,boilPt:-183.0,gamma:1.413668341708543,rhoRel:1.105,rhoL:1.3215,meltPt:null},
   {name:'산소디플루오르화물',eng:'Oxygen Difluoride',formula:'OF2',mw:53.9962,rhoG:2.22,lel:null,uel:null,vaporP:null,boilPt:-144.9,gamma:null,rhoRel:1.88,rhoL:1.521,meltPt:null},
   {name:'오존',eng:'Ozone',formula:'O3',mw:47.9982,rhoG:1.964,lel:null,uel:null,vaporP:null,boilPt:-111.3,gamma:null,rhoRel:1.66,rhoL:1.574,meltPt:null},
@@ -5826,11 +5971,11 @@ var GAS_DB = [
   {name:'포스겐',eng:'Phosgene',formula:'COCl2',mw:98.9164,rhoG:4.119,lel:null,uel:null,vaporP:175.0,boilPt:7.6,gamma:null,rhoRel:3.48,rhoL:1.3714,meltPt:-127.8},
   {name:'포스핀',eng:'Phosphine',formula:'PH3',mw:33.997800000000005,rhoG:1.4024,lel:null,uel:null,vaporP:4190.0,boilPt:-87.7,gamma:null,rhoRel:1.184,rhoL:0.744,meltPt:null},
   {name:'실란',eng:'Silane',formula:'SiH4',mw:32.118,rhoG:1.342,lel:null,uel:null,vaporP:null,boilPt:-111.5,gamma:null,rhoRel:1.114,rhoL:0.711,meltPt:-185.0},
-  {name:'실리콘테트라플루오리드',eng:'Silicone Tetrafluoride(Silicon (IV) fluoride)',formula:'SiF4',mw:104.08000000000001,rhoG:4.37,lel:null,uel:null,vaporP:null,boilPt:-65.0,gamma:null,rhoRel:3.63,rhoL:null,meltPt:-95.7},
+  {name:'실리콘테트라플루오리드',eng:'Silicone Tetrafluoride(Silicon (IV) fluoride)',formula:'SiF4',mw:104.08000000000001,rhoG:4.37,lel:null,uel:null,vaporP:null,boilPt:-65.0,gamma:null,rhoRel:3.63,rhoL:null,meltPt:-95.7},
   {name:'이산화황',eng:'Sulfur Dioxide',formula:'SO2',mw:64.06299999999999,rhoG:2.668,lel:null,uel:null,vaporP:339.0,boilPt:-10.0,gamma:1.2894630055457865,rhoRel:2.263,rhoL:1.462,meltPt:null},
   {name:'육불화황',eng:'Sulfur Hexafluoride',formula:'SF6',mw:146.054,rhoG:6.162,lel:null,uel:null,vaporP:2308.0,boilPt:null,gamma:null,rhoRel:5.114,rhoL:1.91,meltPt:-50.8},
   {name:'황테트라플루오르화물',eng:'Sulfur Tetrafluoride',formula:'SF4',mw:108.058,rhoG:4.558,lel:null,uel:null,vaporP:1067.0,boilPt:-40.4,gamma:null,rhoRel:3.783,rhoL:1.9406,meltPt:'-120.5∼-121.5'},
-  {name:'황화불소',eng:'Sulfuryl Fluoride(Sulphuryl difluoride)',formula:'SO2F2',mw:102.06,rhoG:4.486,lel:null,uel:null,vaporP:1598.0,boilPt:-55.4,gamma:null,rhoRel:3.72,rhoL:1.786,meltPt:null},
+  {name:'황화불소',eng:'Sulfuryl Fluoride(Sulphuryl difluoride)',formula:'SO2F2',mw:102.06,rhoG:4.486,lel:null,uel:null,vaporP:1598.0,boilPt:-55.4,gamma:null,rhoRel:3.72,rhoL:1.786,meltPt:null},
   {name:'비닐메틸에테르',eng:'Vinyl Methyl Ether',formula:'CH3OCH',mw:0.0,rhoG:null,lel:null,uel:null,vaporP:null,boilPt:null,gamma:null,rhoRel:null,rhoL:null,meltPt:null},
   {name:'크세논',eng:'Xenon',formula:'Xe',mw:131.3,rhoG:5.391,lel:null,uel:null,vaporP:null,boilPt:-108.1,gamma:1.6601652892561984,rhoRel:4.553,rhoL:3.084,meltPt:null},
 ];
@@ -6148,6 +6293,8 @@ var expAbsPressure = 201325; // 0.1MPa(게이지) + 101325
 var expCurrentGas = null; // 선택된 가스 DB 객체
 
 function openExplosionCalc() {
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-explosion');
   document.getElementById('modal-explosion').style.display = 'block';
   document.getElementById('modal-explosion').scrollTop = 0;
   expTab(0);
@@ -8459,6 +8606,8 @@ function dxfExport() {
 }
 
 function openGasStorageCalc() {
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-gas-storage');
   document.getElementById('modal-gas-storage').style.display = 'flex';
   calcGsStorage();
   // v0.26: 광고 푸시
@@ -8509,10 +8658,14 @@ function calcGsStorage() {
 }
 
 function openMonthlyCalc() {
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-monthly');
   var modal = document.getElementById('modal-monthly');
   modal.style.display = 'flex';
   // 현재 사용량 합계 자동 로드
   loadTotalKcal();
+  // v0.33: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
 }
 
 function closeMonthlyCalc() {
@@ -8606,10 +8759,16 @@ function goMain(mode) {
   }
   // 고압 모드에서만 자동 모달
   if (mode === 'highpressure') { openGasStorageCalc(); }
+  // v0.34: 메인 작업화면 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
+  // v0.35: quickbar 높이 재측정 (모달이 quickbar 아래에서 시작하도록)
+  if (typeof updateQuickbarOffsets === 'function') setTimeout(updateQuickbarOffsets, 50);
 }
 function hideHome() {
   document.body.classList.remove('home-active');
   document.getElementById('home-screen').style.display = 'none';
+  // v0.34: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
 }
 function goHome() {
   document.body.classList.add('home-active');
@@ -8623,6 +8782,21 @@ function goHome() {
   // quickbar 모든 버튼 표시 복원
   var btns = document.querySelectorAll('#quickbar .qbtn');
   for (var i = 0; i < btns.length; i++) { btns[i].style.display = ''; }
+}
+
+// v0.35: 현재 열려있는 모든 풀스크린 모달 닫기 (작은 overlay 류는 제외)
+function closeAllFullscreenModals(exceptId){
+  var ids = document.querySelectorAll('[id^="modal-"]');
+  for(var i=0;i<ids.length;i++){
+    var el = ids[i];
+    if(!el || el.id===exceptId) continue;
+    if(el.classList && el.classList.contains('modal-overlay')) continue;
+    if(el.id==='modal-menu' || el.id==='modal-seg') continue;
+    // 보이는 상태면 닫기
+    var disp = el.style.display;
+    if(disp && disp!=='none'){ el.style.display='none'; }
+  }
+  try{ document.body.style.overflow=''; }catch(e){}
 }
 function exitApp() {
   if (!confirm('앱을 종료하시겠습니까?')) return;
@@ -8641,6 +8815,8 @@ function openExternal(url) {
 }
 function openHelp() {
   document.getElementById('modal-help').style.display = 'block';
+  // v0.33: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
 }
 
 // 초기화
@@ -8660,12 +8836,16 @@ function kgsToggleFav(code, ev) {
 }
 
 function openKgs() {
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-kgs');
   document.getElementById('modal-kgs').style.display = 'block';
   document.getElementById('kgs-search').value = '';
   kgsCurrentLaw = '전체';
   kgsFavs = JSON.parse(localStorage.getItem('kgs_favs') || '[]');
   updateKgsTabs();
   filterKgs();
+  // v0.33: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
 }
 function closeKgs() {
   document.getElementById('modal-kgs').style.display = 'none';
@@ -9316,6 +9496,8 @@ function expSrcEditorExportPdf() {
 var cscSrcs = []; // [{d:50, n:4}, {d:75, n:1}, ...]
 
 function openCascade() {
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-cascade');
   document.getElementById('modal-cascade').style.display = 'block';
   hideHome();
   // 초기 1행 (없을 때만)
@@ -9992,8 +10174,12 @@ openExplosionCalc = function() {
 //  내진성능평가 모듈 (KGS GC204 / 2400-3 기준)
 // ============================================================
 function openSeismicCalc(){
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-seismic');
   document.getElementById('modal-seismic').style.display='block';
   document.getElementById('modal-seismic').scrollTop=0;
+  // v0.33: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
 }
 function closeSeismicCalc(){
   document.getElementById('modal-seismic').style.display='none';
@@ -10583,6 +10769,8 @@ var docWriterData = {
 
 function openDocWriter() {
   document.getElementById('modal-docwriter').style.display = 'flex';
+  // v0.33: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
   // 폼에 기존 값 채우기
   var d = docWriterData;
   var fields = ['company','companyAddr','companyTel','companyFax','companyReg','ceoName',
@@ -10941,8 +11129,12 @@ function dwRenderAfterPreview() {
 
 // ── 살수장치 계산 (KGS FS331 2.3.2.1.1 / 2.8.3 기준) ──
 function openSprinklerCalc() {
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-sprinkler');
   document.getElementById('modal-sprinkler').style.display = 'flex';
   calcSprinkler();
+  // v0.33: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
 }
 function closeSprinklerCalc() {
   document.getElementById('modal-sprinkler').style.display = 'none';
@@ -12372,6 +12564,16 @@ function dwProcessTemplate() {
       구간 데이터가 있으면 '관경계산결과' 시트가 자동 추가됩니다.
       <div id="dw-calc-status" style="margin-top:4px;font-family:var(--mono)"></div>
     </div>
+
+    <!-- v0.33: 서류작성 모달 배너 광고 -->
+    <div class="ad-slot" id="ad-docwriter" style="margin:12px 0">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-4143509079420163"
+           data-ad-slot="8852587530"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    </div>
   </div>
 </div>
 
@@ -12429,8 +12631,989 @@ function dwProcessTemplate() {
 
     <!-- DXF 도면 생성 -->
     <button onclick="spExportDxf()" style="width:100%;margin-top:10px;padding:12px;background:rgba(200,100,255,0.15);border:1.5px solid rgba(200,100,255,0.5);border-radius:10px;color:#d090ff;font-weight:700;font-size:13px;cursor:pointer">📐 살수장치 DXF 도면 생성</button>
+
+    <!-- v0.33: 살수장치 모달 배너 광고 -->
+    <div class="ad-slot" id="ad-sprinkler" style="margin:12px 0">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-4143509079420163"
+           data-ad-slot="8852587530"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    </div>
   </div>
 </div>
+
+<!-- ============================================================
+     v0.36: 전기방식 설계서(희생양극법) 계산 모달 (modal-corrosion)
+     ============================================================ -->
+<div id="modal-corrosion" class="fs-modal" style="display:none;position:fixed;inset:0;background:var(--bg1);z-index:550;overflow-y:auto;-webkit-overflow-scrolling:touch">
+<div style="max-width:760px;margin:0 auto">
+  <div style="background:linear-gradient(135deg,#2a1a05,#4a3010);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid rgba(255,200,80,0.4);position:sticky;top:0;z-index:10">
+    <div style="font-size:14px;font-weight:800;color:#ffd966">⚡ 전기방식 설계서(희생양극법)</div>
+    <div style="display:flex;gap:6px">
+      <button onclick="exportCorrosionPdf()" style="background:rgba(255,200,80,0.18);border:1px solid rgba(255,200,80,0.5);border-radius:8px;color:#ffd966;font-size:12px;font-weight:700;cursor:pointer;padding:7px 12px">📄 PDF 출력</button>
+      <button onclick="closeCorrosionCalc()" style="background:rgba(255,200,80,0.15);border:1px solid rgba(255,200,80,0.4);border-radius:8px;color:#ffd966;font-size:13px;font-weight:700;cursor:pointer;padding:7px 14px">✕ 닫기</button>
+    </div>
+  </div>
+
+  <div id="corr-form" style="padding:14px 14px 80px;display:flex;flex-direction:column;gap:12px">
+
+    <!-- 1. 방식 대상 -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:13px;font-weight:700;color:#ffd966;margin-bottom:8px">1. 방식 대상</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+        <label>압력 (MPa)
+          <input type="text" id="corr-pressure" value="0.99" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>대상 관경
+          <select id="corr-pipe" onchange="corrPipeChanged()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-size:12px">
+            <option value="60.5">50A (외경 60.5 mm)</option>
+            <option value="76.3" selected>65A (외경 76.3 mm)</option>
+            <option value="89.1">80A (외경 89.1 mm)</option>
+            <option value="114.3">100A (외경 114.3 mm)</option>
+            <option value="139.8">125A (외경 139.8 mm)</option>
+            <option value="165.2">150A (외경 165.2 mm)</option>
+            <option value="216.5">200A (외경 216.5 mm)</option>
+            <option value="267.4">250A (외경 267.4 mm)</option>
+            <option value="318.5">300A (외경 318.5 mm)</option>
+            <option value="custom">직접입력</option>
+          </select>
+        </label>
+        <label>관 외경 (mm)
+          <input type="number" id="corr-od" value="76.3" step="0.1" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>배관 길이 (m)
+          <input type="number" id="corr-len" value="74.2" step="0.1" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label style="grid-column:1/-1">비고 (선택)
+          <input type="text" id="corr-remark" value="" placeholder="비고" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1)">
+        </label>
+      </div>
+    </div>
+
+    <!-- 2. Mg-Anode 사양 -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:13px;font-weight:700;color:#ffd966;margin-bottom:8px">2. Mg-Anode 사양 선택</div>
+      <label style="font-size:12px;display:block;margin-bottom:8px">사양
+        <select id="corr-anode" onchange="corrAnodeChanged()" style="width:100%;padding:8px 10px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-size:12px">
+          <option value="9D2">9 LB (9D₂) — BARE 2.5"×26⅜" / BACKFILL 6"×31"</option>
+          <option value="9D3">9 LB (9D₃) — BARE 3.75"×14⅛" / BACKFILL 6"×17"</option>
+          <option value="14PDF" selected>14 LB (기준) — Bare 2.86"Ø×40" / BACKFILL 6"Ø×46"</option>
+          <option value="14D2">14 LB (14D₂) — BARE 2.5"×41½" / BACKFILL 6"×46"</option>
+          <option value="17D3">17 LB (17D₃) — BARE 3.75"×25⅞" / BACKFILL 6.5"×29"</option>
+          <option value="custom">직접 입력</option>
+        </select>
+      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">
+        <label>중량 W (LB)
+          <input type="number" id="corr-w" value="14" step="0.1" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>길이 L (cm)
+          <input type="number" id="corr-anL" value="93.98" step="0.01" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>직경 D (cm)
+          <input type="number" id="corr-anD" value="15.24" step="0.01" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.5">※ 사양 선택 시 W/L/D 자동 입력됩니다. 필요 시 직접 수정 가능합니다. 기본값(14LB): L=93.98cm, D=15.24cm.</div>
+    </div>
+
+    <!-- 3. 설계 기준 -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:13px;font-weight:700;color:#ffd966;margin-bottom:8px">3. 설계 기준</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+        <label>방식소요전류밀도 (mA/㎡)
+          <input type="number" id="corr-cd" value="20" step="0.5" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>도장 손상률 (%)
+          <input type="number" id="corr-damage" value="2" step="0.1" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>안전률 (%할증)
+          <input type="number" id="corr-safety" value="100" step="1" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>방식전위 (mV, 음수)
+          <input type="number" id="corr-vprot" value="-1000" step="10" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>자연전위 (mV, 음수)
+          <input type="number" id="corr-vnat" value="-1700" step="10" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>토양비저항 ρ (Ω·cm)
+          <input type="number" id="corr-rho" value="10000" step="100" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>양극 효율 F
+          <input type="number" id="corr-eff" value="0.5" step="0.01" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>이론전기이용량 H (A·hr/LB)
+          <input type="number" id="corr-H" value="500" step="10" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>양극 이용률
+          <input type="number" id="corr-util" value="0.85" step="0.01" onchange="corrCalc()" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+        <label>테스트박스 개소
+          <input type="number" id="corr-tbox" value="1" step="1" min="0" style="width:100%;padding:6px 8px;margin-top:3px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-family:var(--mono)">
+        </label>
+      </div>
+    </div>
+
+    <!-- 계산 버튼 -->
+    <button onclick="corrCalc()" style="padding:12px;background:rgba(255,200,80,0.2);border:1.5px solid rgba(255,200,80,0.5);border-radius:10px;color:#ffd966;font-weight:800;font-size:14px;cursor:pointer">🔢 계산 실행</button>
+
+    <!-- 결과 영역 (PDF 양식과 동일하게 렌더) -->
+    <div id="corr-result" style="background:#ffffff;color:#111;border:1px solid #ccc;border-radius:10px;padding:14px;font-size:12px;line-height:1.7"></div>
+
+    <!-- 광고 -->
+    <div class="ad-slot" id="ad-corrosion" style="margin:12px 0">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-4143509079420163"
+           data-ad-slot="8852587530"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- v0.36: 전기방식 인쇄용 스타일 -->
+<style id="corr-print-style">
+@media print {
+  body * { visibility: hidden !important; }
+  #corr-print-area, #corr-print-area * { visibility: visible !important; }
+  #corr-print-area { position: absolute; left:0; top:0; width:100%; padding:14mm; background:#fff; color:#000; }
+  #corr-print-area .corr-tbl{ width:100%; border-collapse:collapse; margin:6px 0 12px }
+  #corr-print-area .corr-tbl th, #corr-print-area .corr-tbl td{ border:1px solid #000; padding:5px 7px; font-size:12px; text-align:center }
+  #corr-print-area .corr-tbl th{ background:#eee }
+  @page{ size:A4; margin:10mm 12mm; }
+}
+.corr-tbl{ width:100%; border-collapse:collapse; margin:6px 0 12px; color:#111 }
+.corr-tbl th, .corr-tbl td{ border:1px solid #888; padding:5px 7px; font-size:12px; text-align:center; color:#111 }
+.corr-tbl th{ background:#e8e8e8 }
+.corr-red{ color:#d33; font-weight:700 }
+.corr-section{ font-size:14px; font-weight:800; color:#111; margin:14px 0 6px }
+</style>
+
+<!-- 인쇄용 전용 영역 (화면에선 숨김) -->
+<div id="corr-print-area" style="display:none"></div>
+
+<script>
+/* ===================== v0.36: 전기방식(희생양극법) 계산 ===================== */
+var MG_ANODES = {
+  '9D2':   { name:'9 LB (9D₂)',       W:9,  L:78.74,  D:15.24 },
+  '9D3':   { name:'9 LB (9D₃)',       W:9,  L:43.18,  D:15.24 },
+  '14PDF': { name:'14 LB (기준)', W:14, L:93.98,  D:15.24 },
+  '14D2':  { name:'14 LB (14D₂)',     W:14, L:116.84, D:15.24 },
+  '17D3':  { name:'17 LB (17D₃)',     W:17, L:73.66,  D:16.51 }
+};
+function corrAnodeChanged(){
+  var v = document.getElementById('corr-anode').value;
+  if(v==='custom') return;
+  var a = MG_ANODES[v];
+  if(!a) return;
+  document.getElementById('corr-w').value = a.W;
+  document.getElementById('corr-anL').value = a.L;
+  document.getElementById('corr-anD').value = a.D;
+  corrCalc();
+}
+function corrPipeChanged(){
+  var sel = document.getElementById('corr-pipe').value;
+  if(sel==='custom') return;
+  document.getElementById('corr-od').value = sel;
+  corrCalc();
+}
+function corrFmt(n, dec){
+  if(!isFinite(n)) return '—';
+  dec = (dec==null) ? 2 : dec;
+  return (Math.round(n * Math.pow(10,dec)) / Math.pow(10,dec)).toLocaleString('ko-KR', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+}
+function corrPipeName(odMm){
+  var map = [[60.5,'50A'],[76.3,'65A'],[89.1,'80A'],[114.3,'100A'],[139.8,'125A'],[165.2,'150A'],[216.5,'200A'],[267.4,'250A'],[318.5,'300A']];
+  for(var i=0;i<map.length;i++){ if(Math.abs(map[i][0]-odMm)<0.05) return map[i][1]; }
+  return '';
+}
+function corrCalc(){
+  var pressure = (document.getElementById('corr-pressure').value || '').trim();
+  var odMm  = parseFloat(document.getElementById('corr-od').value) || 0;
+  var lenM  = parseFloat(document.getElementById('corr-len').value) || 0;
+  var remark= document.getElementById('corr-remark').value || '';
+  var W     = parseFloat(document.getElementById('corr-w').value) || 0;
+  var anL   = parseFloat(document.getElementById('corr-anL').value) || 0;
+  var anD   = parseFloat(document.getElementById('corr-anD').value) || 0;
+  var cd    = parseFloat(document.getElementById('corr-cd').value) || 0;
+  var damage= parseFloat(document.getElementById('corr-damage').value) || 0;
+  var vprot = parseFloat(document.getElementById('corr-vprot').value) || 0;
+  var vnat  = parseFloat(document.getElementById('corr-vnat').value) || 0;
+  var rho   = parseFloat(document.getElementById('corr-rho').value) || 0;
+  var eff   = parseFloat(document.getElementById('corr-eff').value) || 0;
+  var H     = parseFloat(document.getElementById('corr-H').value) || 0;
+  var util  = parseFloat(document.getElementById('corr-util').value) || 0;
+  var tbox  = parseInt(document.getElementById('corr-tbox').value) || 0;
+
+  var anodeSel = document.getElementById('corr-anode').value;
+  var anodeName = (MG_ANODES[anodeSel] && MG_ANODES[anodeSel].name) || '사용자 정의';
+
+  // ① 방식대상 면적 S = OD(m) × π × L(m)
+  var odM = odMm / 1000.0;
+  var S = odM * Math.PI * lenM;
+
+  // ② 방식소요 전류 I = S × cd (mA)
+  var I = S * cd;
+
+  // ③ 양극 접지저항 Ra = ρ/(2π·L) × (ln(8L/D) − 1)
+  var Ra = 0;
+  if(anL>0 && anD>0){
+    Ra = rho / (2*Math.PI*anL) * (Math.log(8*anL/anD) - 1);
+  }
+
+  // ④ 양극 1개당 발생전류 Img = ΔV / Ra (mA)
+  var dV = Math.abs(vnat) - Math.abs(vprot);
+  var Img = (Ra>0) ? (dV / Ra) : 0;
+
+  // ⑤ 양극의 수 N = (I/Img) × (도장손상률/100) → 올림
+  var rawN = (Img>0) ? (I / Img) * (damage/100) : 0;
+  var N = (rawN>0) ? Math.max(1, Math.ceil(rawN)) : 0;
+
+  // ⑥ 양극의 수명 Yr = (W × H × F) / (8760 × Img_A) × util(0.85)
+  var Img_A = Img / 1000.0;
+  var Yr = (Img_A>0) ? ((W * H * eff) / (8760 * Img_A) * util) : 0;
+
+  var pipeName = corrPipeName(odMm);
+
+  // PDF 양식과 동일한 결과 HTML
+  var html = '';
+  html += '<div class="corr-section">1. 방식 대상</div>';
+  html += '<table class="corr-tbl"><tr><th>압력</th><th>대상</th><th>관 외경(mm)</th><th>길이(m)</th><th>비고</th></tr>';
+  html += '<tr><td class="corr-red">'+(pressure||'-')+'MPa</td><td class="corr-red">'+(pipeName||'-')+'</td><td class="corr-red">'+corrFmt(odMm,1)+' mm</td><td class="corr-red">'+corrFmt(lenM,1)+' m</td><td>'+(remark||'&nbsp;')+'</td></tr>';
+  html += '</table>';
+
+  html += '<div class="corr-section">2. Mg-Anode 사양</div>';
+  html += '<div style="padding-left:14px">';
+  html += '① Mg-Anode '+anodeName+' (사용)<br>';
+  html += '② 길 이(L) : '+corrFmt(anL,2)+' cm<br>';
+  html += '③ 직 경(D) : '+corrFmt(anD,2)+' cm<br>';
+  html += '④ 중 량(W) : '+corrFmt(W,1)+' LB<br>';
+  html += '</div>';
+
+  html += '<div class="corr-section">3. 설계 기준</div>';
+  html += '<div style="padding-left:14px">';
+  html += '① 방식소요전류밀도(A) : '+corrFmt(cd,0)+' ㎃/㎡ ('+(cd/1000).toFixed(3)+' A/㎡)<br>';
+  html += '② 도장 손상률 : '+corrFmt(damage,0)+' %<br>';
+  html += '③ 안전률 : '+document.getElementById('corr-safety').value+' % 할증<br>';
+  html += '④ 방식전류 : '+corrFmt(vprot,0)+'㎷이하 (포화 황산동 전극기준)<br>';
+  html += '⑤ 토양비저항(p) : '+corrFmt(rho,0)+' Ω-㎝ (대수평균치)<br>';
+  html += '</div>';
+
+  html += '<div class="corr-section">4. 설 계</div>';
+  html += '<div style="padding-left:14px;font-family:var(--mono),monospace">';
+  html += '① 방식대상 면적 (S)<br>';
+  html += '&nbsp;&nbsp;S = 관 외경(m) × π × 배관의 길이(m)<br>';
+  html += '&nbsp;&nbsp;&nbsp;&nbsp;= '+corrFmt(odM,4)+' m × π × '+corrFmt(lenM,1)+' m = <b>'+corrFmt(S,3)+' ㎡</b><br>';
+  html += '② 방식소요 전류 (I)<br>';
+  html += '&nbsp;&nbsp;I = 방식대상면적(㎡) × 소요전류밀도(㎃/㎡)<br>';
+  html += '&nbsp;&nbsp;&nbsp;&nbsp;= '+corrFmt(S,3)+' ㎡ × '+corrFmt(cd,0)+' ㎃/㎡ = <b>'+corrFmt(I,3)+' ㎃</b><br>';
+  html += '③ 양극 접지저항 (Ra)<br>';
+  html += '&nbsp;&nbsp;Ra = ρ/(2πL) × (ln(8L/D) − 1)<br>';
+  html += '&nbsp;&nbsp;&nbsp;&nbsp;= '+corrFmt(rho,0)+'Ω-㎝ ÷ (2 × π × '+corrFmt(anL,2)+'㎝) × (ln(8 × '+corrFmt(anL,2)+' ÷ '+corrFmt(anD,2)+') − 1) = <b>'+corrFmt(Ra,2)+' Ω</b><br>';
+  html += '&nbsp;&nbsp;&nbsp;&nbsp;( ※ Ra : 양극 접지저항, L : 양극 길이, D : 양극 직경 )<br>';
+  html += '④ 양극 1개당 발생전류(Img)<br>';
+  html += '&nbsp;&nbsp;Img = ΔV ÷ Ra<br>';
+  html += '&nbsp;&nbsp;&nbsp;&nbsp;= '+corrFmt(dV,0)+' ÷ '+corrFmt(Ra,2)+' = <b>'+corrFmt(Img,2)+' ㎃</b><br>';
+  html += '&nbsp;&nbsp;&nbsp;&nbsp;( ※ ΔV = 양극의 자연전위 − 방식전위 = '+corrFmt(Math.abs(vnat),0)+' − '+corrFmt(Math.abs(vprot),0)+' = '+corrFmt(dV,0)+' mV )<br>';
+  html += '⑤ 양극의 수량 (N)<br>';
+  html += '&nbsp;&nbsp;N = 방식소요전류(I) ÷ 양극1개당 발생전류(Img) × 도장손상률<br>';
+  html += '&nbsp;&nbsp;&nbsp;&nbsp;= '+corrFmt(I,3)+' ÷ '+corrFmt(Img,2)+'㎃ × '+corrFmt(damage,0)+'% = '+corrFmt(rawN,3)+' 개 &nbsp; ∴ 적 용 : <b class="corr-red">'+N+' 개</b><br>';
+  html += '</div>';
+
+  html += '<div class="corr-section">5. 양극의 수명 (Yr)</div>';
+  html += '<div style="padding-left:14px;font-family:var(--mono),monospace">';
+  html += 'Yr = {(W × H × F) ÷ (8,760 × Img)} × '+corrFmt(util,2)+' (년)<br>';
+  html += '&nbsp;&nbsp;&nbsp;= {('+corrFmt(W,0)+' × '+corrFmt(H,0)+' × '+corrFmt(eff,1)+') ÷ (8,760 × '+corrFmt(Img_A,5)+')} × '+corrFmt(util,2)+' = <b class="corr-red">'+corrFmt(Yr,1)+' 년</b><br>';
+  html += '<span style="font-size:11px;color:#555">- '+corrFmt(util,2)+' : 양극의 이용률('+corrFmt(util*100,0)+'%)<br>';
+  html += '- W : 양극의 중량(LB)&nbsp;&nbsp;- Img : 양극1개당 발생전류(A)<br>';
+  html += '- F : 양극의 효율('+corrFmt(eff*100,0)+'%='+corrFmt(eff,2)+')&nbsp;&nbsp;- H : 양극의 이론전기이용량('+corrFmt(H,0)+' A·hr/LB)</span>';
+  html += '</div>';
+
+  html += '<div class="corr-section">6. 측정함 및 절연</div>';
+  html += '<div style="padding-left:14px">';
+  html += '① 배관의 방식 상태등의 측정을 위한 테스트박스 설치<br>';
+  html += '② 테스트박스 설치개소 : <b class="corr-red">'+tbox+' 개소</b><br>';
+  html += '③ 방식대상과 타 배관은 반드시 전기적으로 절연<br>';
+  html += '</div>';
+
+  document.getElementById('corr-result').innerHTML = html;
+  // 인쇄 영역도 동기화
+  var pa = document.getElementById('corr-print-area');
+  if(pa){
+    pa.innerHTML =
+      '<div style="text-align:center;font-size:18px;font-weight:800;margin-bottom:14px;text-decoration:underline">전기방식 설계서(희생양극법)</div>'+
+      html;
+  }
+}
+function openCorrosionCalc(){
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-corrosion');
+  var m = document.getElementById('modal-corrosion');
+  if(!m) return;
+  m.style.display = 'flex';
+  m.style.flexDirection = 'column';
+  corrCalc();
+  if(typeof pushAdsenseAds==='function') setTimeout(pushAdsenseAds, 200);
+}
+function closeCorrosionCalc(){
+  var m = document.getElementById('modal-corrosion');
+  if(m) m.style.display='none';
+  if(typeof goHome==='function') goHome();
+}
+function exportCorrosionPdf(){
+  if(typeof requireOutput==='function' && !requireOutput('전기방식 PDF')) return;
+  corrCalc();
+  var pa = document.getElementById('corr-print-area');
+  if(pa) pa.style.display='block';
+  if(window.AndroidBridge && window.AndroidBridge.printReport){
+    window.AndroidBridge.printReport();
+  } else {
+    window.print();
+  }
+  setTimeout(function(){ if(pa) pa.style.display='none'; }, 1500);
+}
+</script>
+
+<!-- ============================================================
+     v0.29: 검사수수료·교육비 계산 모달 (modal-fee)
+     출처: 산업통상자원부고시 2025-155호(고압가스), 156호(LPG),
+           157호(도시가스) — 2025.10.1 시행
+     ============================================================ -->
+<div id="modal-fee" class="fs-modal" style="display:none;position:fixed;inset:0;background:var(--bg1);z-index:550;overflow-y:auto;-webkit-overflow-scrolling:touch">
+<div style="max-width:720px;margin:0 auto">
+  <div style="background:linear-gradient(135deg,#2a1810,#4a2818);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid rgba(255,160,80,0.4);position:sticky;top:0;z-index:10">
+    <div style="font-size:14px;font-weight:800;color:#ffb070">💰 검사수수료ㆍ교육비 계산 <span style="font-size:11px;font-weight:600;color:#ffb070;opacity:0.75">(25.12.30기준)</span></div>
+    <button onclick="closeFee()" style="background:rgba(255,160,80,0.15);border:1px solid rgba(255,160,80,0.4);border-radius:8px;color:#ffb070;font-size:13px;font-weight:700;cursor:pointer;padding:7px 14px">✕ 닫기</button>
+  </div>
+  <div style="padding:14px 14px 28px;display:flex;flex-direction:column;gap:10px">
+
+    <!-- 검색 -->
+    <div style="position:relative">
+      <input type="text" id="fee-search" oninput="renderFeeList()" placeholder="항목명·시설명·키워드 검색 (예: 정압기, 5톤, 배관, 교육)" style="width:100%;padding:12px 14px 12px 36px;background:var(--bg2);border:1.5px solid rgba(255,160,80,0.3);border-radius:10px;color:var(--text1);font-size:14px;font-family:var(--sans)">
+      <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;opacity:0.5">🔍</span>
+    </div>
+
+    <!-- 법령 필터 -->
+    <div id="fee-tabs" style="display:flex;gap:4px;flex-wrap:wrap">
+      <button onclick="setFeeLaw('전체')" class="fee-tab fee-tab-active" style="padding:7px 12px;border-radius:8px;border:1px solid rgba(255,160,80,0.4);background:rgba(255,160,80,0.18);color:#ffb070;font-size:11px;font-weight:700;cursor:pointer">전체</button>
+      <button onclick="setFeeLaw('도시가스')" class="fee-tab" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer">도시가스</button>
+      <button onclick="setFeeLaw('LPG')" class="fee-tab" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer">LPG</button>
+      <button onclick="setFeeLaw('고압가스')" class="fee-tab" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer">고압가스</button>
+      <button onclick="setFeeLaw('교육비')" class="fee-tab" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer">교육비</button>
+      <button onclick="setFeeLaw('기술검토')" class="fee-tab" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer">기술검토</button>
+      <button onclick="setFeeLaw('시공감리')" class="fee-tab" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer">시공감리</button>
+      <button onclick="setFeeLaw('기타')" class="fee-tab" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer">기타</button>
+    </div>
+
+    <!-- 가산금 옵션 -->
+    <details style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 10px">
+      <summary style="cursor:pointer;font-size:12px;font-weight:700;color:#ffb070">⚙️ 가산금·할증 옵션 (펼치기)</summary>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;font-size:11px;color:var(--text2)">
+        <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="fee-opt-overtime" onchange="renderFeeList()"> 연장·야간·휴일 가산금 적용 (근기법 §56, 통상임금 1.5배)</label>
+        <div style="display:flex;align-items:center;gap:6px;padding-left:22px">
+          <span>검사시간:</span>
+          <input type="number" id="fee-opt-hours" value="4" min="4" step="0.5" style="width:60px;padding:4px 6px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-size:11px" oninput="renderFeeList()">
+          <span>시간 (4시간 미만은 4시간으로 계산)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding-left:22px">
+          <span>1일 통상임금:</span>
+          <input type="number" id="fee-opt-wage" value="240000" min="0" step="10000" style="width:90px;padding:4px 6px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--text1);font-size:11px" oninput="renderFeeList()">
+          <span>원/일 (소정 8시간 기준)</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);padding-left:22px">※ 가산금 = (통상임금/8) × 1.5 × 검사시간 — 결과 카드에 별도 표시</div>
+      </div>
+    </details>
+
+    <!-- 건수 -->
+    <div style="font-size:11px;color:var(--text3)" id="fee-count">총 0건</div>
+
+    <!-- 결과 목록 -->
+    <div id="fee-list" style="display:flex;flex-direction:column;gap:8px"></div>
+
+    <!-- v0.33: 수수료 모달 배너 광고 -->
+    <div class="ad-slot" id="ad-fee" style="margin:12px 0">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-4143509079420163"
+           data-ad-slot="8852587530"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    </div>
+
+    <!-- 출처 -->
+    <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:12px;line-height:1.5">
+      출처(검사수수료·교육비): 산업통상자원부고시 제2025-155·156·157호 (2025.9.1 개정, 2025.10.1 시행)<br>
+      출처(기술검토 비용): 한국가스안전공사 규정 13200 (2025.12.29 개정, 2026.1.1 시행)<br>
+      출처(시공감리 수수료): 한국가스안전공사 지침 1202 (2025.12.3 개정, 2026.1.1 시행)<br>
+      ※ 표시 금액은 별표 기준이며, 실제 청구액은 한국가스안전공사 산정에 따릅니다.
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+/* ===================== v0.29: 검사수수료 데이터·로직 ===================== */
+var FEE_DATA = (function(){
+  function lpgLiqFee(t, type){
+    if(t<=0) return 0;
+    var table = type==='comp'
+      ? [[5,219000],[10,326000],[20,414000],[50,535000],[100,681000],[500,1061000],[1000,1562000]]
+      : [[5,147000],[10,202000],[20,229000],[50,316000],[100,405000],[500,700000],[1000,1004000]];
+    for(var i=0;i<table.length;i++){ if(t<=table[i][0]) return table[i][1]; }
+    var base = type==='comp' ? 1562000 : 1004000;
+    var add  = type==='comp' ? 220000  : 125000;
+    var cap  = type==='comp' ? 2946000 : 1831000;
+    var over = Math.ceil((t-1000)/500);
+    return Math.min(base + over*add, cap);
+  }
+  function hpgLiqFee(t, type){
+    var table = type==='comp'
+      ? [[5,181000],[10,245000],[20,307000],[50,451000],[100,623000],[500,1049000],[1000,1500000]]
+      : [[5,140000],[10,169000],[20,198000],[50,284000],[100,378000],[500,682000],[1000,921000]];
+    for(var i=0;i<table.length;i++){ if(t<=table[i][0]) return table[i][1]; }
+    var base = type==='comp' ? 1500000 : 921000;
+    var add  = type==='comp' ? 174000  : 146000;
+    var cap  = type==='comp' ? 4297000 : 2169000;
+    var over = Math.ceil((t-1000)/500);
+    return Math.min(base + over*add, cap);
+  }
+  function hpgCompFee(v, type){
+    var table = type==='comp'
+      ? [[1000,212000],[2000,371000],[3000,466000],[5000,548000],[10000,927000],[100000,1519000],[200000,2027000],[500000,2582000],[1000000,3195000]]
+      : [[1000,152000],[2000,231000],[3000,282000],[5000,342000],[10000,656000],[100000,1017000],[200000,1703000],[500000,2182000],[1000000,2637000]];
+    for(var i=0;i<table.length;i++){ if(v<=table[i][0]) return table[i][1]; }
+    var base = type==='comp' ? 3195000 : 2637000;
+    var add  = type==='comp' ? 161000  : 140000;
+    var cap  = type==='comp' ? 4297000 : 3008000;
+    var over = Math.ceil((v-1000000)/100000);
+    return Math.min(base + over*add, cap);
+  }
+  function hpgRefFee(t, type){
+    var table = type==='comp'
+      ? [[5,50000],[10,94000],[30,175000],[50,229000],[100,390000],[200,604000],[300,731000],[500,975000]]
+      : [[5,34000],[10,59000],[30,107000],[50,154000],[100,255000],[200,371000],[300,472000],[500,679000]];
+    for(var i=0;i<table.length;i++){ if(t<=table[i][0]) return table[i][1]; }
+    var base = type==='comp' ? 975000 : 679000;
+    var add  = type==='comp' ? 155000 : 140000;
+    var cap  = type==='comp' ? 1811000 : 1472000;
+    var over = Math.ceil((t-500)/100);
+    return Math.min(base + over*add, cap);
+  }
+  function hpgPipeFee(km){
+    if(km<=1) return 209000;
+    if(km<=2) return 392000;
+    if(km<=3) return 571000;
+    if(km<=4) return 753000;
+    if(km<=5) return 937000;
+    return 937000 + Math.ceil(km-5)*65000;
+  }
+  function cityPipeFee(km){
+    if(km<2) return 56000;
+    if(km<5) return 115000;
+    if(km<10) return 203000;
+    return 203000 + Math.ceil(km-10)*19000;
+  }
+  function cityUseFee(v, type){
+    if(v<=1000) return type==='comp'? 66700 : 32000;
+    if(v<=4000) return type==='comp'? 66700 : 48500;
+    if(type==='comp'){
+      var add = Math.ceil((v-4000)/500)*9300;
+      return Math.min(66700+add, 1047000);
+    } else {
+      var add2 = Math.ceil((v-4000)/500)*9000;
+      return Math.min(48500+add2, 388000);
+    }
+  }
+  function cityBuriedFee(n, kind){
+    if(kind==='single'){
+      if(n>=20) return 0;
+      return n*20000;
+    }
+    if(n<=150) return n*13000;
+    if(n<=300) return Math.round((150 + (n-150)*0.75) * 13000);
+    if(n<=500) return Math.round((262.5 + (n-300)*0.5) * 13000);
+    return Math.round((362.5 + (n-500)*0.25) * 13000);
+  }
+  function cityChgLiqFee(t, type){
+    var table;
+    if(type==='mid')       table=[[5,106000],[10,142000],[20,164000],[50,230000],[100,320000],[500,546000],[1000,768000]];
+    else if(type==='comp') table=[[5,174000],[10,235000],[20,295000],[50,435000],[100,599000],[500,1010000],[1000,1443000]];
+    else                   table=[[5,139000],[10,167000],[20,197000],[50,281000],[100,375000],[500,676000],[1000,913000]];
+    for(var i=0;i<table.length;i++){ if(t<=table[i][0]) return table[i][1]; }
+    var base = type==='mid'? 768000 : (type==='comp'? 1443000 : 913000);
+    var add  = type==='mid'? 100000 : (type==='comp'? 167000  : 145000);
+    var cap  = type==='mid'? 2435000: (type==='comp'? 4133000 : 2148000);
+    var over = Math.ceil((t-1000)/500);
+    return Math.min(base+over*add, cap);
+  }
+  function cityChgCompFee(v, type){
+    var table;
+    if(type==='mid')       table=[[1000,123000],[2000,195000],[3000,223000],[5000,275000],[10000,455000],[100000,739000],[200000,1015000],[500000,1276000],[1000000,1723000]];
+    else if(type==='comp') table=[[1000,204000],[2000,357000],[3000,448000],[5000,527000],[10000,892000],[100000,1461000],[200000,1947000],[500000,2485000],[1000000,3074000]];
+    else                   table=[[1000,151000],[2000,229000],[3000,279000],[5000,339000],[10000,649000],[100000,1007000],[200000,1686000],[500000,2161000],[1000000,2613000]];
+    for(var i=0;i<table.length;i++){ if(v<=table[i][0]) return table[i][1]; }
+    var base = type==='mid'? 1723000 : (type==='comp'? 3074000 : 2613000);
+    var add  = type==='mid'? 87000   : (type==='comp'? 155000  : 139000);
+    var cap  = type==='mid'? 2435000 : (type==='comp'? 4133000 : 2752000);
+    var over = Math.ceil((v-1000000)/100000);
+    return Math.min(base+over*add, cap);
+  }
+
+  /* ===== 기술검토 비용 (한국가스안전공사 규정 13200, 2026.1.1 시행) ===== */
+  // 별표 1.가 - 고압가스 액화가스 제조·저장·충전시설
+  function techHpgLiq(t){
+    if(t<=5) return 51500;
+    if(t<=10) return 75200;
+    if(t<=20) return 97900;
+    if(t<=50) return 138000;
+    if(t<=100) return 207000;
+    if(t<=500) return 335000;
+    if(t<=1000) return 491000;
+    var over=Math.ceil((t-1000)/500);
+    return Math.min(491000+over*153000, 2561000);
+  }
+  // 별표 1.가 - 고압가스 압축가스 제조·저장·충전시설 (도시가스 압축 충전시설도 동일)
+  function techHpgComp(v){
+    if(v<=1000) return 63900;
+    if(v<=2000) return 114300;
+    if(v<=3000) return 145200;
+    if(v<=5000) return 179200;
+    if(v<=10000) return 338000;
+    if(v<=100000) return 543000;
+    if(v<=200000) return 770000;
+    if(v<=500000) return 971000;
+    if(v<=1000000) return 1201000;
+    var over=Math.ceil((v-1000000)/100000);
+    return Math.min(1201000+over*141000, 2561000);
+  }
+  // 별표 1.가 - 고압가스 냉동제조시설
+  function techHpgRef(t){
+    if(t<=5) return 13400;
+    if(t<=10) return 24700;
+    if(t<=30) return 58700;
+    if(t<=50) return 90600;
+    if(t<=100) return 148300;
+    if(t<=200) return 231800;
+    if(t<=300) return 296000;
+    if(t<=500) return 372000;
+    var over=Math.ceil((t-500)/100);
+    return Math.min(372000+over*138000, 1066000);
+  }
+  // 별표 1.가/라 - 고압가스·수소 배관
+  function techHpgPipe(km){
+    if(km<=1) return 82400;
+    if(km<=2) return 164000;
+    if(km<=3) return 234000;
+    if(km<=4) return 305000;
+    if(km<=5) return 365000;
+    return 365000 + Math.ceil(km-5)*61000;
+  }
+  // 별표 1.나 - LPG 충전·일반집단공급·저장소 (저장능력 톤)
+  function techLpgLiq(t){
+    if(t<=5) return 51500;
+    if(t<=10) return 75200;
+    if(t<=20) return 95000;
+    if(t<=50) return 134000;
+    if(t<=100) return 201000;
+    if(t<=500) return 335000;
+    if(t<=1000) return 491000;
+    var over=Math.ceil((t-1000)/500);
+    return Math.min(491000+over*153000, 1384000);
+  }
+  // 별표 1.나 - LPG 배관망공급사업 제조소
+  function techLpgNet(t){
+    if(t<=5) return 51500;
+    if(t<=10) return 75200;
+    if(t<=20) return 97900;
+    if(t<=50) return 134000;
+    if(t<=100) return 207000;
+    if(t<=500) return 335000;
+    if(t<=1000) return 491000;
+    var over=Math.ceil((t-1000)/500);
+    return Math.min(491000+over*153000, 1384000);
+  }
+  // 별표 1.나/다 - LPG·도시가스 배관 (저압 0.2MPa 미만)
+  function techPipeLow(km){
+    if(km<2) return 42200;
+    if(km<10) return 111000;
+    return 111000 + Math.ceil(km-10)*38000;
+  }
+  // 별표 1.나/다 - LPG·도시가스 배관 (고압 0.2MPa 이상)
+  function techPipeHigh(km){
+    if(km<5) return 438000;
+    return 438000 + Math.ceil(km-5)*81000;
+  }
+  // 별표 1.다 - 도시가스 액화가스 충전시설
+  function techCityLiq(t){
+    if(t<=5) return 51500;
+    if(t<=10) return 75200;
+    if(t<=20) return 95000;
+    if(t<=50) return 134000;
+    if(t<=100) return 201000;
+    if(t<=500) return 335000;
+    if(t<=1000) return 491000;
+    var over=Math.ceil((t-1000)/500);
+    return Math.min(491000+over*153000, 2561000);
+  }
+  // 별표 1.다 - 도시가스 특정가스사용시설 (월사용예정량)
+  function techCityUse(v){
+    if(v<=4000) return 24700;
+    var over=Math.ceil((v-4000)/500);
+    return Math.min(24700+over*3600, 519000);
+  }
+  // 별표 1.라 - 압축수소가스 제조(저장) 시설
+  function techH2Comp(v){
+    if(v<=200) return 62000;
+    if(v<=400) return 111000;
+    if(v<=600) return 141000;
+    if(v<=1000) return 174000;
+    if(v<=2000) return 338000;
+    if(v<=20000) return 543000;
+    if(v<=40000) return 770000;
+    if(v<=100000) return 971000;
+    if(v<=200000) return 1201000;
+    var over=Math.ceil((v-200000)/20000);
+    return Math.min(1201000+over*141000, 2561000);
+  }
+
+  return [
+    {law:'도시가스', cat:'가스공급시설 정기검사', name:'제조소 - 가스도매사업자(합성천연가스 제조시설)', keys:'제조소 도매 합성천연 SNG', mode:'fixed', amount:1030000},
+    {law:'도시가스', cat:'가스공급시설 정기검사', name:'제조소 - 일반도시가스(나프타부생·바이오가스)', keys:'제조소 일반 나프타 부생 바이오', mode:'fixed', amount:545000},
+    {law:'도시가스', cat:'가스공급시설 정기검사', name:'공급소', keys:'공급소', mode:'fixed', amount:245000},
+    {law:'도시가스', cat:'가스공급시설 정기검사', name:'정압(밸브)기지', keys:'정압 밸브기지', mode:'fixed', amount:197000},
+    {law:'도시가스', cat:'가스공급시설 정기검사', name:'정압기', keys:'정압기', mode:'fixed', amount:88000},
+    {law:'도시가스', cat:'가스공급시설 정기검사', name:'배관 (연장 km 입력)', keys:'배관 연장 km', mode:'input', unit:'km', placeholder:'예: 7.5', calc:cityPipeFee, note:'2km미만 56,000원 / 2-5km 115,000원 / 5-10km 203,000원 / 10km↑ +19,000원/km'},
+    {law:'도시가스', cat:'안전관리수준평가', name:'안전관리수준평가 시설 (배관 km당)', keys:'안전관리 평가 수준', mode:'input', unit:'km', placeholder:'예: 12.3', calc:function(km){ return Math.max(1,Math.ceil(km))*40000; }, note:'1km당 40,000원 (1km 미만은 1km로)'},
+    {law:'도시가스', cat:'특정가스사용시설', name:'완성검사 - 월사용예정량(㎥) 입력', keys:'특정 완성 월사용 사용시설', mode:'input', unit:'㎥/월', placeholder:'예: 2500', calc:function(v){ return cityUseFee(v,'comp'); }, techCalc:techCityUse, note:'완성검사: 1천㎥이하 66,700원 / 4천㎥초과 +9,300원/500㎥ (상한 1,047,000원) | 기술검토: 4천㎥이하 24,700원 / 초과 +3,600원/500㎥ (상한 519,000원)'},
+    {law:'도시가스', cat:'특정가스사용시설', name:'정기검사 - 월사용예정량(㎥) 입력', keys:'특정 정기 월사용 사용시설', mode:'input', unit:'㎥/월', placeholder:'예: 2500', calc:function(v){ return cityUseFee(v,'reg'); }, note:'1천㎥이하 32,000원 / 4천㎥초과 +9,000원/500㎥ (상한 388,000원)'},
+    {law:'도시가스', cat:'특정가스사용시설', name:'자동차용 CNG 완속충전설비 완성검사', keys:'CNG 완속 충전 자동차', mode:'fixed', amount:32000},
+    {law:'도시가스', cat:'특정가스사용시설', name:'자동차용 CNG 완속충전설비 정기검사', keys:'CNG 완속 충전 자동차', mode:'fixed', amount:28000},
+    {law:'도시가스', cat:'배관매립시설', name:'단독주택 (20세대 미만, 세대수 입력)', keys:'배관 매립 단독주택', mode:'input', unit:'세대', placeholder:'예: 15', calc:function(n){ return cityBuriedFee(n,'single'); }, techAmount:24700, note:'완성검사: 세대수×20,000원 | 기술검토: 24,700원 (고정)'},
+    {law:'도시가스', cat:'배관매립시설', name:'공동주택 (세대수 입력)', keys:'배관 매립 공동주택 아파트', mode:'input', unit:'세대', placeholder:'예: 250', calc:function(n){ return cityBuriedFee(n,'apt'); }, techAmount:24700, note:'완성검사: ~150세대 13,000원/세대 등 구간별 차등 | 기술검토: 24,700원(세대 면적형별)'},
+    {law:'도시가스', cat:'안전관리규정 심사', name:'가스도매사업자(SNG) 신규', keys:'안전관리규정 도매 신규', mode:'fixed', amount:482000},
+    {law:'도시가스', cat:'안전관리규정 심사', name:'가스도매사업자(SNG) 변경', keys:'안전관리규정 도매 변경', mode:'fixed', amount:371000},
+    {law:'도시가스', cat:'안전관리규정 심사', name:'일반도시가스(나프타·바이오) 신규', keys:'안전관리규정 일반 신규', mode:'fixed', amount:346000},
+    {law:'도시가스', cat:'안전관리규정 심사', name:'일반도시가스(나프타·바이오) 변경', keys:'안전관리규정 일반 변경', mode:'fixed', amount:267000},
+    {law:'도시가스', cat:'안전관리규정 심사', name:'도시가스충전시설 신규', keys:'안전관리규정 충전 신규', mode:'fixed', amount:291000},
+    {law:'도시가스', cat:'안전관리규정 심사', name:'도시가스충전시설 변경', keys:'안전관리규정 충전 변경', mode:'fixed', amount:225000},
+    {law:'도시가스', cat:'도시가스충전시설 - 액화가스', name:'중간검사 (저장능력 톤 입력)', keys:'충전 액화 중간', mode:'input', unit:'톤', placeholder:'예: 30', calc:function(t){ return cityChgLiqFee(t,'mid'); }, note:'5톤이하 106,000원 ~ 1천톤초과 상한 2,435,000원'},
+    {law:'도시가스', cat:'도시가스충전시설 - 액화가스', name:'완성검사 (저장능력 톤 입력)', keys:'충전 액화 완성', mode:'input', unit:'톤', placeholder:'예: 30', calc:function(t){ return cityChgLiqFee(t,'comp'); }, techCalc:techCityLiq, note:'완성검사 상한 4,133,000원 | 기술검토: 5톤이하 51,500 ~ 1천톤초과 상한 2,561,000'},
+    {law:'도시가스', cat:'도시가스충전시설 - 액화가스', name:'정기검사 (저장능력 톤 입력)', keys:'충전 액화 정기', mode:'input', unit:'톤', placeholder:'예: 30', calc:function(t){ return cityChgLiqFee(t,'reg'); }, note:'상한 2,148,000원'},
+    {law:'도시가스', cat:'도시가스충전시설 - 압축가스', name:'중간검사 (저장능력 ㎥ 입력)', keys:'충전 압축 중간', mode:'input', unit:'㎥', placeholder:'예: 5000', calc:function(v){ return cityChgCompFee(v,'mid'); }, note:'1천㎥이하 123,000원 ~ 상한 2,435,000원'},
+    {law:'도시가스', cat:'도시가스충전시설 - 압축가스', name:'완성검사 (저장능력 ㎥ 입력)', keys:'충전 압축 완성', mode:'input', unit:'㎥', placeholder:'예: 5000', calc:function(v){ return cityChgCompFee(v,'comp'); }, techCalc:techHpgComp, note:'완성검사 상한 4,133,000원 | 기술검토: 1천㎥이하 63,900 ~ 100만㎥초과 상한 2,561,000'},
+    {law:'도시가스', cat:'도시가스충전시설 - 압축가스', name:'정기검사 (저장능력 ㎥ 입력)', keys:'충전 압축 정기', mode:'input', unit:'㎥', placeholder:'예: 5000', calc:function(v){ return cityChgCompFee(v,'reg'); }, note:'상한 2,752,000원'},
+    {law:'도시가스', cat:'정밀안전진단·배관건전성', name:'정밀안전진단 (시행규칙 27조의2 1호 나목)', keys:'정밀안전진단 배관건전성', mode:'input', unit:'km', placeholder:'예: 5', calc:function(km){ return Math.max(1,Math.ceil(km))*2590000; }, note:'259만원/km (1km 미만은 1km로)'},
+    {law:'도시가스', cat:'정밀안전진단·배관건전성', name:'정밀안전진단 (시행규칙 27조의2 1호 다목)', keys:'정밀안전진단 다목', mode:'input', unit:'km', placeholder:'예: 5', calc:function(km){ return Math.max(1,Math.ceil(km))*2070000; }, note:'207만원/km (피복손상탐지 추가 시 +337만원/km)'},
+    {law:'도시가스', cat:'정밀안전진단·배관건전성', name:'매설배관피복손상탐지 가산', keys:'피복손상탐지 매설', mode:'input', unit:'km', placeholder:'예: 5', calc:function(km){ return Math.max(1,Math.ceil(km))*3370000; }, note:'+337만원/km'},
+    {law:'도시가스', cat:'가스안전영향평가', name:'전기철도건설공사', keys:'영향평가 전기철도', mode:'fixed', amount:2302000},
+    {law:'도시가스', cat:'가스안전영향평가', name:'지하차도건설공사', keys:'영향평가 지하차도', mode:'fixed', amount:1357000},
+    {law:'도시가스', cat:'가스안전영향평가', name:'지하보도건설공사', keys:'영향평가 지하보도', mode:'fixed', amount:953000},
+    {law:'도시가스', cat:'가스안전영향평가', name:'지하상가건설공사', keys:'영향평가 지하상가', mode:'fixed', amount:1651000},
+    {law:'도시가스', cat:'품질검사', name:'도시가스 품질검사 (월 판매물량 ㎥ 입력)', keys:'품질검사 판매물량', mode:'input', unit:'㎥', placeholder:'예: 1000000', calc:function(v){ return Math.round(v*0.041); }, note:'0.041원/㎥ (0℃, 101.3kPa)'},
+
+    {law:'LPG', cat:'충전·일반집단공급·저장소', name:'완성검사 (저장능력 톤 입력)', keys:'LPG 충전 집단공급 저장 완성', mode:'input', unit:'톤', placeholder:'예: 30', calc:function(t){ return lpgLiqFee(t,'comp'); }, techCalc:techLpgLiq, note:'완성검사: 5톤이하 219,000 ~ 상한 2,946,000 | 기술검토: 5톤이하 51,500 ~ 상한 1,384,000'},
+    {law:'LPG', cat:'충전·일반집단공급·저장소', name:'정기검사 (저장능력 톤 입력)', keys:'LPG 충전 집단공급 저장 정기', mode:'input', unit:'톤', placeholder:'예: 30', calc:function(t){ return lpgLiqFee(t,'reg'); }, note:'상한 1,831,000'},
+    {law:'LPG', cat:'판매·가스용품', name:'판매시설 완성검사 (판매소마다)', keys:'LPG 판매시설 완성', mode:'fixed', amount:186000, techAmount:47400},
+    {law:'LPG', cat:'판매·가스용품', name:'판매시설 정기검사 (판매소마다)', keys:'LPG 판매시설 정기', mode:'fixed', amount:127000},
+    {law:'LPG', cat:'판매·가스용품', name:'가스용품 제조시설 완성검사', keys:'LPG 가스용품 제조', mode:'fixed', amount:429000, techAmount:196700},
+    {law:'LPG', cat:'액화석유가스 특정사용시설', name:'완성검사 - 저장능력 100kg 이하', keys:'LPG 특정사용 100kg', mode:'fixed', amount:31800},
+    {law:'LPG', cat:'액화석유가스 특정사용시설', name:'완성검사 - 100kg초과 300kg이하', keys:'LPG 특정사용 300kg', mode:'fixed', amount:36000},
+    {law:'LPG', cat:'액화석유가스 특정사용시설', name:'정기검사 - 100kg초과 300kg이하', keys:'LPG 특정사용 300kg 정기', mode:'fixed', amount:26500},
+    {law:'LPG', cat:'액화석유가스 특정사용시설', name:'완성검사 - 300kg초과 500kg이하', keys:'LPG 특정사용 500kg', mode:'fixed', amount:58200},
+    {law:'LPG', cat:'액화석유가스 특정사용시설', name:'정기검사 - 300kg초과 500kg이하', keys:'LPG 특정사용 500kg 정기', mode:'fixed', amount:38100},
+    {law:'LPG', cat:'배관망공급 정기검사', name:'제조소 (저장능력 톤 입력) - 정기검사', keys:'LPG 배관망 제조소 정기', mode:'input', unit:'톤', placeholder:'예: 30', calc:function(t){ return lpgLiqFee(t,'reg'); }, techCalc:techLpgNet, note:'정기검사: 액화 정기검사 표 적용 | 기술검토(신규): 5톤이하 51,500 ~ 상한 1,384,000'},
+    {law:'LPG', cat:'배관망공급 정기검사', name:'정압기', keys:'LPG 배관망 정압기', mode:'fixed', amount:88000, techAmount:94800, note:'기술검토: 정압기 설치/변경공사 94,800원'},
+    {law:'LPG', cat:'배관망공급 정기검사', name:'배관 - 저압(0.2MPa 미만, km 입력)', keys:'LPG 배관망 배관 저압', mode:'input', unit:'km', placeholder:'예: 7', calc:cityPipeFee, techCalc:techPipeLow, note:'정기검사: 도시가스 배관검사 동일 | 기술검토(저압): 2km미만 42,200 / 2-10km 111,000 / 10km↑ +38,000/km'},
+    {law:'LPG', cat:'배관망공급 정기검사', name:'배관 - 고압(0.2MPa 이상, km 입력)', keys:'LPG 배관망 배관 고압', mode:'input', unit:'km', placeholder:'예: 7', calc:cityPipeFee, techCalc:techPipeHigh, note:'정기검사: 도시가스 배관검사 동일 | 기술검토(고압): 5km미만 438,000 / 5km↑ +81,000/km'},
+    {law:'LPG', cat:'생산공정·종합공정', name:'생산공정검사 최초·갱신', keys:'LPG 생산공정 갱신', mode:'fixed', amount:3089000},
+    {law:'LPG', cat:'생산공정·종합공정', name:'종합공정검사 최초·갱신', keys:'LPG 종합공정 갱신', mode:'fixed', amount:4644000},
+    {law:'LPG', cat:'가스용품 설계단계검사', name:'압력조정기류', keys:'설계단계 압력조정기', mode:'fixed', amount:641000},
+    {law:'LPG', cat:'가스용품 설계단계검사', name:'배관용 밸브', keys:'설계단계 배관용밸브', mode:'fixed', amount:534000},
+    {law:'LPG', cat:'가스용품 설계단계검사', name:'배관이음관·정압기용 필터', keys:'설계단계 이음관 필터', mode:'fixed', amount:534000},
+    {law:'LPG', cat:'가스용품 설계단계검사', name:'콕', keys:'설계단계 콕', mode:'fixed', amount:561000},
+
+    {law:'고압가스', cat:'액화가스 제조·충전·저장', name:'완성검사 (능력 톤 입력)', keys:'고압 액화 제조 충전 완성', mode:'input', unit:'톤', placeholder:'예: 30', calc:function(t){ return hpgLiqFee(t,'comp'); }, techCalc:techHpgLiq, note:'완성검사 상한 4,297,000원 | 기술검토: 5톤이하 51,500 ~ 상한 2,561,000'},
+    {law:'고압가스', cat:'액화가스 제조·충전·저장', name:'정기검사 (능력 톤 입력)', keys:'고압 액화 정기', mode:'input', unit:'톤', placeholder:'예: 30', calc:function(t){ return hpgLiqFee(t,'reg'); }, note:'상한 2,169,000원'},
+    {law:'고압가스', cat:'압축가스 제조·충전·저장', name:'완성검사 (능력 ㎥ 입력)', keys:'고압 압축 제조 충전 완성', mode:'input', unit:'㎥', placeholder:'예: 5000', calc:function(v){ return hpgCompFee(v,'comp'); }, techCalc:techHpgComp, note:'완성검사 상한 4,297,000원 | 기술검토: 1천㎥이하 63,900 ~ 상한 2,561,000'},
+    {law:'고압가스', cat:'압축가스 제조·충전·저장', name:'정기검사 (능력 ㎥ 입력)', keys:'고압 압축 정기', mode:'input', unit:'㎥', placeholder:'예: 5000', calc:function(v){ return hpgCompFee(v,'reg'); }, note:'상한 3,008,000원'},
+    {law:'고압가스', cat:'냉동제조시설', name:'완성검사 (냉동톤 입력)', keys:'냉동 완성', mode:'input', unit:'냉동톤', placeholder:'예: 50', calc:function(t){ return hpgRefFee(t,'comp'); }, techCalc:techHpgRef, note:'완성검사 상한 1,811,000원 | 기술검토: 5톤이하 13,400 ~ 상한 1,066,000'},
+    {law:'고압가스', cat:'냉동제조시설', name:'정기검사 (냉동톤 입력)', keys:'냉동 정기', mode:'input', unit:'냉동톤', placeholder:'예: 50', calc:function(t){ return hpgRefFee(t,'reg'); }, note:'상한 1,472,000원'},
+    {law:'고압가스', cat:'배관', name:'완성·정기검사 (연장 km 입력)', keys:'고압 배관 완성 정기', mode:'input', unit:'km', placeholder:'예: 3', calc:hpgPipeFee, techCalc:techHpgPipe, note:'완성·정기 209,000 ~ 937,000 + 5km초과 +65,000/km | 기술검토: 1km이하 82,400 ~ 5km초과 +61,000/km'},
+    {law:'고압가스', cat:'판매·수입업', name:'판매시설 완성검사', keys:'고압 판매 완성', mode:'fixed', amount:139000, techAmount:47400},
+    {law:'고압가스', cat:'판매·수입업', name:'고압가스수입업시설 완성검사', keys:'고압 수입업 완성', mode:'fixed', amount:139000, techAmount:47400},
+    {law:'고압가스', cat:'판매·수입업', name:'고압가스수입업시설 정기검사', keys:'고압 수입업 정기', mode:'fixed', amount:104000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 액화', name:'완성검사 - 100kg 이하', keys:'특정고압 액화 100kg', mode:'fixed', amount:34000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 액화', name:'정기검사 - 100kg 이하', keys:'특정고압 액화 100kg 정기', mode:'fixed', amount:29000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 액화', name:'완성검사 - 100-300kg', keys:'특정고압 액화 300kg', mode:'fixed', amount:37000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 액화', name:'정기검사 - 100-300kg', keys:'특정고압 액화 300kg 정기', mode:'fixed', amount:32000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 액화', name:'완성검사 - 300-500kg', keys:'특정고압 액화 500kg', mode:'fixed', amount:54000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 액화', name:'정기검사 - 300-500kg', keys:'특정고압 액화 500kg 정기', mode:'fixed', amount:42000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 액화', name:'500kg 초과 (kg 입력)', keys:'특정고압 액화 초과', mode:'input', unit:'kg', placeholder:'예: 800', calc:function(kg){ if(kg<=500) return 54000; var over=Math.ceil((kg-500)/100); return Math.min(54000+over*2000, 455000); }, note:'완성검사: 54,000원 + 100kg당 2,000원 (상한 455,000원)'},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 압축', name:'완성검사 - 300㎥ 이하', keys:'특정고압 압축 300', mode:'fixed', amount:34000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 압축', name:'정기검사 - 300㎥ 이하', keys:'특정고압 압축 300 정기', mode:'fixed', amount:29000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 압축', name:'완성검사 - 300-500㎥', keys:'특정고압 압축 500', mode:'fixed', amount:37000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 압축', name:'정기검사 - 300-500㎥', keys:'특정고압 압축 500 정기', mode:'fixed', amount:32000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 압축', name:'완성검사 - 500-1000㎥', keys:'특정고압 압축 1000', mode:'fixed', amount:54000},
+    {law:'고압가스', cat:'특정고압가스 사용시설 - 압축', name:'정기검사 - 500-1000㎥', keys:'특정고압 압축 1000 정기', mode:'fixed', amount:40000},
+    {law:'고압가스', cat:'제조시설', name:'용기 제조시설 완성검사', keys:'용기 제조시설 완성', mode:'fixed', amount:506000, techAmount:196700},
+    {law:'고압가스', cat:'제조시설', name:'냉동기 제조시설 완성검사', keys:'냉동기 제조시설 완성', mode:'fixed', amount:506000, techAmount:196700},
+    {law:'고압가스', cat:'제조시설', name:'특정설비 제조시설 완성검사', keys:'특정설비 제조시설 완성', mode:'fixed', amount:506000, techAmount:196700, note:'기술검토: 기타 특정설비 196,700원 (LNG저장탱크는 911,600원 — 아래 별도 항목)'},
+    {law:'고압가스', cat:'생산공정·종합공정', name:'생산공정검사 공정확인 심사비', keys:'고압 생산공정 심사', mode:'fixed', amount:4480000},
+    {law:'고압가스', cat:'생산공정·종합공정', name:'종합공정검사 종합품질관리체계 심사비', keys:'고압 종합공정 심사', mode:'fixed', amount:5980000},
+
+    {law:'교육비', cat:'도시가스', name:'안전관리책임자·안전관리원 신규', keys:'교육 도시가스 안전관리 신규', mode:'fixed', amount:195900},
+    {law:'교육비', cat:'도시가스', name:'안전관리책임자·안전관리원 보수', keys:'교육 도시가스 안전관리 보수', mode:'fixed', amount:37100},
+    {law:'교육비', cat:'도시가스', name:'배관안전점검원 신규', keys:'교육 배관안전점검원 신규', mode:'fixed', amount:130300},
+    {law:'교육비', cat:'도시가스', name:'배관안전점검원 보수', keys:'교육 배관안전점검원 보수', mode:'fixed', amount:37100},
+    {law:'교육비', cat:'도시가스', name:'안전조치 대행업소 기술인력 신규', keys:'교육 안전조치 대행 신규', mode:'fixed', amount:195900},
+    {law:'교육비', cat:'도시가스', name:'안전조치 대행업소 기술인력 보수', keys:'교육 안전조치 대행 보수', mode:'fixed', amount:37100},
+    {law:'교육비', cat:'도시가스', name:'특정가스사용시설 안전관리책임자 신규', keys:'교육 특정사용 안전관리 신규', mode:'fixed', amount:61400},
+    {law:'교육비', cat:'도시가스', name:'특정가스사용시설 안전관리책임자 보수', keys:'교육 특정사용 안전관리 보수', mode:'fixed', amount:28600},
+    {law:'교육비', cat:'도시가스', name:'가스시설 시공업 1·2종 시공자/관리자 신규', keys:'교육 시공업 1종 2종 신규', mode:'fixed', amount:195900},
+    {law:'교육비', cat:'도시가스', name:'가스시설 시공업 1·2종 시공자/관리자 보수', keys:'교육 시공업 1종 2종 보수', mode:'fixed', amount:37100},
+    {law:'교육비', cat:'도시가스', name:'시공업 3종 온수보일러 시공자 신규', keys:'교육 시공업 3종 온수보일러 신규', mode:'fixed', amount:192700},
+    {law:'교육비', cat:'도시가스', name:'시공업 3종 온수보일러 시공자 보수', keys:'교육 시공업 3종 온수보일러 보수', mode:'fixed', amount:28600},
+    {law:'교육비', cat:'한국가스안전공사 자체', name:'보수·유지관리원', keys:'교육 보수유지관리원', mode:'fixed', amount:49800},
+    {law:'교육비', cat:'한국가스안전공사 자체', name:'사용시설점검원', keys:'교육 사용시설점검원', mode:'fixed', amount:24400},
+    {law:'교육비', cat:'한국가스안전공사 자체', name:'도시가스 사용 자동차 운전자', keys:'교육 자동차 운전자', mode:'fixed', amount:22200},
+    {law:'교육비', cat:'한국가스안전공사 자체', name:'도시가스 자동차 충전시설 충전원', keys:'교육 자동차 충전원', mode:'fixed', amount:24400},
+    {law:'교육비', cat:'한국가스안전공사 자체', name:'도시가스 사용 자동차 정비원', keys:'교육 자동차 정비원', mode:'fixed', amount:24400},
+
+    {law:'기타', cat:'LNG 저장탱크', name:'액화천연가스저장탱크 신규검사', keys:'LNG 저장탱크 신규', mode:'note', note:'검사: 엔지니어링사업대가기준 1일단가 × 소요일수 (도시가스 고시 별표 5호 준용) | 기술검토: 911,600원 (별표1.가 특정설비 LNG저장탱크)'},
+
+    /* ===== 시공감리 수수료 (한국가스안전공사 지침 1202, 2025.12.3 개정, 2026.1.1 시행)
+            제3조③ 감리원 1일 단가: 872,000원 ===== */
+    {law:'시공감리', cat:'정압(밸브)기지', name:'신규 (감리기간 6일)', keys:'시공감리 정압기지 신규', mode:'fixed', amount:5232000, note:'872,000원 × 6일'},
+    {law:'시공감리', cat:'정압(밸브)기지', name:'변경 (감리기간 4일)', keys:'시공감리 정압기지 변경', mode:'fixed', amount:3488000, note:'872,000원 × 4일'},
+    {law:'시공감리', cat:'정압기', name:'신규 (감리기간 1.5일)', keys:'시공감리 정압기 신규', mode:'fixed', amount:1308000, note:'872,000원 × 1.5일'},
+    {law:'시공감리', cat:'정압기', name:'변경 (감리기간 1일)', keys:'시공감리 정압기 변경', mode:'fixed', amount:872000, note:'872,000원 × 1일'},
+    {law:'시공감리', cat:'제조소·공급소', name:'제조소·공급소 (감리소요일수 입력)', keys:'시공감리 제조소 공급소', mode:'input', unit:'일', placeholder:'예: 10', calc:function(d){ return Math.max(0,d)*872000; }, note:'872,000원 × 감리소요일수'},
+    {law:'시공감리', cat:'배관 - LPG 배관망·일반도시가스', name:'배관 (연장 m 입력)', keys:'시공감리 배관 LPG 일반도시가스 m', mode:'input', unit:'m', placeholder:'예: 150', calc:function(m){ if(m<=20) return 145000; var over=Math.ceil((m-20)/10); return 145000 + over*73000; }, note:'20m이하 145,000원 / 20m초과 매 10m마다 +73,000원 (120m/1일 기준 산정)'},
+    {law:'시공감리', cat:'배관 - 사용자공급관', name:'사용자공급관 (연장 m 입력)', keys:'시공감리 사용자공급관 m', mode:'input', unit:'m', placeholder:'예: 1500', calc:function(m){ if(m<=500) return 291000; var over=Math.ceil((m-500)/500); return Math.min(291000 + over*291000, 2910000); }, note:'500m이하 291,000원 / 500m초과 매 500m마다 +291,000원 (상한 2,910,000원, 가산금 제외)'},
+    {law:'시공감리', cat:'배관 - 가스도매사업자', name:'가스도매 배관 (연장 m 입력)', keys:'시공감리 가스도매 배관 m', mode:'input', unit:'m', placeholder:'예: 250', calc:function(m){ if(m<=100) return 2616000; var over=Math.ceil((m-100)/100); return 2616000 + over*581000; }, note:'100m이하 2,616,000원 / 100m초과 매 100m마다 +581,000원 (100m/1일 기준 산정)'},
+    {law:'시공감리', cat:'가산금 안내', name:'연장·야간·휴일 가산금 산정 기준', keys:'시공감리 가산금 야간 휴일', mode:'note', note:'건별 감리시간 1시간 단위로 부과(1시간 미만은 1시간). 동일 현장 2건 이상(시공자 동일) 동시 감리 시 1건에만 부과. 휴일=법정공휴일 / 야간=평일 18시~익일 09시(토요일 09시부터). 상단 가산금 옵션은 검사수수료용이므로 시공감리에는 별도 산정 필요'},
+
+    /* ===== 기술검토 단독 (신규기술검토 - 검사수수료와 별개) ===== */
+    {law:'기술검토', cat:'도시가스 - 가스도매사업', name:'제조소 설치공사 (신규)', keys:'기술검토 가스도매 제조소 설치', mode:'fixed', amount:2190000, note:'기술검토 단독 항목'},
+    {law:'기술검토', cat:'도시가스 - 가스도매사업', name:'제조소 변경공사 - 저장탱크 및 부속설비', keys:'기술검토 가스도매 변경 저장탱크', mode:'fixed', amount:1094000},
+    {law:'기술검토', cat:'도시가스 - 가스도매사업', name:'제조소 변경공사 - 가스발생설비 및 부속설비', keys:'기술검토 가스도매 변경 가스발생', mode:'fixed', amount:1094000},
+    {law:'기술검토', cat:'도시가스 - 가스도매사업', name:'제조소 변경공사 - 기타 부대설비', keys:'기술검토 가스도매 변경 부대설비', mode:'fixed', amount:1094000},
+    {law:'기술검토', cat:'도시가스 - 일반사업', name:'제조소 설치 (저압/중압, 가스제조능력 5만㎥ 미만)', keys:'기술검토 일반 저압 제조 5만 미만', mode:'fixed', amount:292500},
+    {law:'기술검토', cat:'도시가스 - 일반사업', name:'제조소 설치 (저압/중압, 가스제조능력 5만㎥ 이상)', keys:'기술검토 일반 저압 제조 5만 이상', mode:'fixed', amount:355400},
+    {law:'기술검토', cat:'도시가스 - 일반사업', name:'제조소 설치 (고압, 가스제조능력 40만㎥ 미만)', keys:'기술검토 일반 고압 제조 40만 미만', mode:'fixed', amount:639000},
+    {law:'기술검토', cat:'도시가스 - 일반사업', name:'제조소 설치 (고압, 가스제조능력 40만㎥ 이상)', keys:'기술검토 일반 고압 제조 40만 이상', mode:'fixed', amount:805000},
+    {law:'기술검토', cat:'도시가스 - 일반사업 변경공사', name:'제조설비 설치공사 - 가스홀더 설치 수반', keys:'기술검토 변경 가스홀더 수반', mode:'fixed', amount:253400},
+    {law:'기술검토', cat:'도시가스 - 일반사업 변경공사', name:'제조설비 설치공사 - 가스홀더 설치 미수반', keys:'기술검토 변경 가스홀더 미수반', mode:'fixed', amount:206000},
+    {law:'기술검토', cat:'도시가스 - 일반사업 변경공사', name:'제조설비 설치공사 외 - 가스발생설비', keys:'기술검토 변경 가스발생', mode:'fixed', amount:295000},
+    {law:'기술검토', cat:'도시가스 - 일반사업 변경공사', name:'제조설비 설치공사 외 - 가스정제설비', keys:'기술검토 변경 가스정제', mode:'fixed', amount:295000},
+    {law:'기술검토', cat:'도시가스 - 일반사업 변경공사', name:'제조설비 설치공사 외 - 가스홀더', keys:'기술검토 변경 가스홀더', mode:'fixed', amount:200000},
+    {law:'기술검토', cat:'도시가스 - 일반사업 변경공사', name:'제조설비 설치공사 외 - 배송기/압송기', keys:'기술검토 변경 배송기 압송기', mode:'fixed', amount:148000},
+    {law:'기술검토', cat:'도시가스 - 일반사업 변경공사', name:'제조설비 설치공사 외 - 부대설비', keys:'기술검토 변경 부대설비', mode:'fixed', amount:148000},
+    {law:'기술검토', cat:'도시가스 - 공급소', name:'공급소 설치공사', keys:'기술검토 공급소 설치', mode:'fixed', amount:246000},
+    {law:'기술검토', cat:'도시가스 - 공급소', name:'공급소 변경공사', keys:'기술검토 공급소 변경', mode:'fixed', amount:200000},
+    {law:'기술검토', cat:'도시가스 - 정압기', name:'정압기 설치/변경공사', keys:'기술검토 정압기 설치 변경', mode:'fixed', amount:92000},
+    {law:'기술검토', cat:'도시가스 - 정압기지', name:'정압기지 설치공사', keys:'기술검토 정압기지 설치', mode:'fixed', amount:228700},
+    {law:'기술검토', cat:'도시가스 - 정압기지', name:'정압기지 변경공사', keys:'기술검토 정압기지 변경', mode:'fixed', amount:188500},
+    {law:'기술검토', cat:'도시가스 - 배관', name:'배관 - 저압(km 입력)', keys:'기술검토 도시가스 배관 저압', mode:'input', unit:'km', placeholder:'예: 5', calc:techPipeLow, note:'저압(0.2MPa 미만) 또는 중압 배관 (별표1.다)'},
+    {law:'기술검토', cat:'도시가스 - 배관', name:'배관 - 고압(km 입력)', keys:'기술검토 도시가스 배관 고압', mode:'input', unit:'km', placeholder:'예: 5', calc:techPipeHigh, note:'고압 배관 (별표1.다)'},
+
+    {law:'기술검토', cat:'고압가스 - 신규', name:'액화가스 제조·저장·충전 (톤 입력)', keys:'기술검토 고압 액화 신규', mode:'input', unit:'톤', placeholder:'예: 30', calc:techHpgLiq, note:'5톤이하 51,500 ~ 1천톤초과 상한 2,561,000'},
+    {law:'기술검토', cat:'고압가스 - 신규', name:'압축가스 제조·저장·충전 (㎥ 입력)', keys:'기술검토 고압 압축 신규', mode:'input', unit:'㎥', placeholder:'예: 5000', calc:techHpgComp, note:'1천㎥이하 63,900 ~ 100만㎥초과 상한 2,561,000'},
+    {law:'기술검토', cat:'고압가스 - 신규', name:'냉동제조시설 (냉동톤 입력)', keys:'기술검토 냉동 신규', mode:'input', unit:'냉동톤', placeholder:'예: 50', calc:techHpgRef, note:'5톤이하 13,400 ~ 500톤초과 상한 1,066,000'},
+    {law:'기술검토', cat:'고압가스 - 신규', name:'배관 (km 입력)', keys:'기술검토 고압 배관 신규', mode:'input', unit:'km', placeholder:'예: 5', calc:techHpgPipe, note:'1km이하 82,400 ~ 5km초과 +61,000/km'},
+    {law:'기술검토', cat:'고압가스 - 신규', name:'특정설비 - LNG 저장탱크', keys:'기술검토 LNG 저장탱크', mode:'fixed', amount:911600},
+    {law:'기술검토', cat:'고압가스 - 신규', name:'특정설비 - 기타', keys:'기술검토 특정설비 기타', mode:'fixed', amount:196700},
+    {law:'기술검토', cat:'고압가스 - 신규', name:'검사기관시설', keys:'기술검토 검사기관시설', mode:'fixed', amount:128800},
+    {law:'기술검토', cat:'고압가스 - 운반자 등록', name:'운반자 등록대상 차량(1대) - 시행령 5조의4 1항 1·2·3·6호', keys:'기술검토 운반자 차량 1호 2호 3호 6호', mode:'fixed', amount:45300},
+    {law:'기술검토', cat:'고압가스 - 운반자 등록', name:'용기운반자 등록대상 차량(1대) - 시행령 5조의4 1항 4·5호', keys:'기술검토 용기운반자 차량 4호 5호', mode:'fixed', amount:13400},
+    {law:'기술검토', cat:'고압가스 - 등록구분', name:'등록대상 용기 등 (4종류 이상)', keys:'기술검토 용기 등록 4종류', mode:'fixed', amount:5366000},
+    {law:'기술검토', cat:'고압가스 - 등록구분', name:'등록대상 용기 등 (기타)', keys:'기술검토 용기 등록 기타', mode:'fixed', amount:3834000},
+
+    {law:'기술검토', cat:'수소 - 신규', name:'압축수소가스 제조(저장) 시설 (㎥ 입력)', keys:'기술검토 수소 압축 제조 저장', mode:'input', unit:'㎥', placeholder:'예: 1000', calc:techH2Comp, note:'200㎥이하 62,000 ~ 20만㎥초과 상한 2,561,000'},
+    {law:'기술검토', cat:'수소 - 신규', name:'배관 (km 입력)', keys:'기술검토 수소 배관', mode:'input', unit:'km', placeholder:'예: 5', calc:function(km){ if(km<=1) return 80000; return techHpgPipe(km); }, note:'1km이하 80,000 / 1km초과는 고압 배관표 적용'},
+    {law:'기술검토', cat:'수소 - 신규', name:'수소용품 제조시설', keys:'기술검토 수소용품 제조', mode:'fixed', amount:196700},
+    {law:'기술검토', cat:'수소 - 신규', name:'연료전지사용시설 - 월사용예정량(㎥) 입력', keys:'기술검토 수소 연료전지 월사용', mode:'input', unit:'㎥/월', placeholder:'예: 2000', calc:techCityUse, note:'4천㎥이하 24,700 / 초과 +3,600/500㎥ (상한 519,000)'},
+
+    {law:'기술검토', cat:'공장심사 (별표 2)', name:'최초심사 - 용기/저장탱크/탱크/압력용기/냉동기용 특정설비', keys:'공장심사 최초 용기 저장탱크', mode:'fixed', amount:14490000, note:'1종류 또는 규격 추가시 각각 1,440,000원 가산'},
+    {law:'기술검토', cat:'공장심사 (별표 2)', name:'최초심사 - 용기부속품/긴급차단/안전밸브/독성가스밸브/가스용품/수소용품', keys:'공장심사 최초 용기부속품 가스용품', mode:'fixed', amount:12310000},
+    {law:'기술검토', cat:'공장심사 (별표 2)', name:'재등록심사 - 용기/저장탱크/탱크/압력용기/냉동기용 특정설비', keys:'공장심사 재등록 용기 저장탱크', mode:'fixed', amount:12310000},
+    {law:'기술검토', cat:'공장심사 (별표 2)', name:'재등록심사 - 용기부속품/가스용품/수소용품 등', keys:'공장심사 재등록 가스용품', mode:'fixed', amount:10350000},
+    {law:'기술검토', cat:'공장심사 (별표 2)', name:'재심사 - 현장심사', keys:'공장심사 재심사 현장', mode:'fixed', amount:6860000},
+    {law:'기술검토', cat:'공장심사 (별표 2)', name:'재심사 - 서류심사', keys:'공장심사 재심사 서류', mode:'fixed', amount:2070000},
+    {law:'기술검토', cat:'공장심사 (별표 2)', name:'기존 공장심사 필 - 품목/규격 추가 시 기본비용', keys:'공장심사 품목 규격 추가', mode:'fixed', amount:3610000, note:'기존에 공장심사를 필한 제조시설에서 품목 또는 규격을 추가하고자 하는 경우'}
+  ];
+})();
+
+var FEE_CURRENT_LAW = '전체';
+
+function openFeeModal(){
+  // v0.35: 다른 풀스크린 모달 자동 닫기
+  if(typeof closeAllFullscreenModals==='function') closeAllFullscreenModals('modal-fee');
+  var m=document.getElementById('modal-fee');
+  if(!m) return;
+  m.style.display='flex';
+  m.style.flexDirection='column';
+  try{ document.body.style.overflow='hidden'; }catch(e){}
+  renderFeeList();
+  try{ if(window.tryShowInterstitial) tryShowInterstitial(); }catch(e){}
+  // v0.33: 광고 푸시
+  if (typeof pushAdsenseAds === 'function') setTimeout(pushAdsenseAds, 200);
+}
+function closeFee(){
+  var m=document.getElementById('modal-fee');
+  if(m) m.style.display='none';
+  try{ document.body.style.overflow=''; }catch(e){}
+  if(typeof goHome==='function') goHome();
+}
+function setFeeLaw(law){
+  FEE_CURRENT_LAW = law;
+  var tabs=document.querySelectorAll('#fee-tabs .fee-tab');
+  tabs.forEach(function(b){
+    var active = (b.textContent.trim()===law);
+    b.classList.toggle('fee-tab-active', active);
+    if(active){
+      b.style.background='rgba(255,160,80,0.18)';
+      b.style.color='#ffb070';
+      b.style.borderColor='rgba(255,160,80,0.4)';
+    } else {
+      b.style.background='transparent';
+      b.style.color='var(--text3)';
+      b.style.borderColor='var(--border)';
+    }
+  });
+  renderFeeList();
+}
+function feeFmtKRW(n){
+  if(!isFinite(n)||n<=0) return '0원';
+  return Math.round(n).toLocaleString('ko-KR')+'원';
+}
+function feeOvertimeSurcharge(){
+  var on=document.getElementById('fee-opt-overtime');
+  if(!on || !on.checked) return 0;
+  var hrsEl=document.getElementById('fee-opt-hours');
+  var wageEl=document.getElementById('fee-opt-wage');
+  var h=parseFloat(hrsEl && hrsEl.value)||4;
+  if(h<4) h=4;
+  var w=parseFloat(wageEl && wageEl.value)||0;
+  return Math.round((w/8)*1.5*h);
+}
+function renderFeeList(){
+  var q=(document.getElementById('fee-search').value||'').trim().toLowerCase();
+  var list=document.getElementById('fee-list');
+  var cnt=document.getElementById('fee-count');
+  if(!list) return;
+  var ot=feeOvertimeSurcharge();
+  var filtered=[];
+  for(var i=0;i<FEE_DATA.length;i++){
+    var it=FEE_DATA[i];
+    if(FEE_CURRENT_LAW!=='전체' && it.law!==FEE_CURRENT_LAW) continue;
+    if(q){
+      var hay=((it.law||'')+' '+(it.cat||'')+' '+(it.name||'')+' '+(it.keys||'')).toLowerCase();
+      if(hay.indexOf(q)<0) continue;
+    }
+    filtered.push({it:it, idx:i});
+  }
+  cnt.textContent='총 '+filtered.length+'건'+(ot>0?' (가산금 +'+feeFmtKRW(ot)+' 옵션 켜짐)':'');
+  if(filtered.length===0){
+    list.innerHTML='<div style="text-align:center;padding:30px 12px;color:var(--text3);font-size:12px">검색 결과가 없습니다.</div>';
+    return;
+  }
+  var parts=[];
+  for(var j=0;j<filtered.length;j++){
+    var it=filtered[j].it, idx=filtered[j].idx;
+    var color, bg, bd;
+    if(it.law==='도시가스'){ color='#7dd8ff'; bg='rgba(125,216,255,0.10)'; bd='rgba(125,216,255,0.35)'; }
+    else if(it.law==='LPG'){ color='#ff9f7f'; bg='rgba(255,159,127,0.10)'; bd='rgba(255,159,127,0.35)'; }
+    else if(it.law==='고압가스'){ color='#c39fff'; bg='rgba(195,159,255,0.10)'; bd='rgba(195,159,255,0.35)'; }
+    else if(it.law==='교육비'){ color='#7dff9f'; bg='rgba(125,255,159,0.10)'; bd='rgba(125,255,159,0.35)'; }
+    else if(it.law==='기술검토'){ color='#ffe070'; bg='rgba(255,224,112,0.10)'; bd='rgba(255,224,112,0.35)'; }
+    else if(it.law==='시공감리'){ color='#9fd0ff'; bg='rgba(159,208,255,0.10)'; bd='rgba(159,208,255,0.35)'; }
+    else { color='#ffd070'; bg='rgba(255,208,112,0.10)'; bd='rgba(255,208,112,0.35)'; }
+    var hasTech = (typeof it.techAmount==='number') || (typeof it.techCalc==='function');
+    var techColor='#ffe070';
+    var safeIdx='f_'+idx;
+    var body='';
+    if(it.mode==='fixed'){
+      var insp=it.amount;
+      var tech=(typeof it.techAmount==='number')?it.techAmount:0;
+      var total=insp + tech + ot;
+      if(hasTech){
+        body='<div style="margin-top:8px;display:flex;flex-direction:column;gap:3px">'+
+          '<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;color:var(--text3)">검사수수료</span><b style="font-size:15px;color:'+color+'">'+feeFmtKRW(insp)+'</b></div>'+
+          '<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;color:var(--text3)">기술검토</span><b style="font-size:15px;color:'+techColor+'">'+feeFmtKRW(tech)+'</b></div>'+
+          (ot>0?'<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;color:var(--text3)">가산금</span><b style="font-size:13px;color:var(--text2)">'+feeFmtKRW(ot)+'</b></div>':'')+
+          '<div style="border-top:1px dashed '+bd+';margin-top:3px;padding-top:3px;display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:12px;font-weight:700;color:var(--text2)">합계</span><b style="font-size:17px;color:'+color+'">'+feeFmtKRW(total)+'</b></div>'+
+          '</div>';
+      } else {
+        body='<div style="font-size:18px;font-weight:800;color:'+color+';margin-top:6px">'+feeFmtKRW(insp)+'</div>'+
+          (ot>0?'<div style="font-size:11px;color:var(--text3);margin-top:2px">가산금 포함 합계: <b style="color:'+color+'">'+feeFmtKRW(insp+ot)+'</b></div>':'');
+      }
+    } else if(it.mode==='input'){
+      body='<div style="display:flex;align-items:center;gap:6px;margin-top:6px">'+
+        '<input type="number" id="'+safeIdx+'" oninput="feeCompute(\''+safeIdx+'\','+idx+')" placeholder="'+(it.placeholder||'')+'" min="0" step="any" style="flex:1;padding:8px 10px;background:var(--bg1);border:1px solid var(--border);border-radius:8px;color:var(--text1);font-size:13px;font-family:var(--mono)">'+
+        '<span style="font-size:12px;color:var(--text3);min-width:38px">'+(it.unit||'')+'</span>'+
+        '<button onclick="feeCompute(\''+safeIdx+'\','+idx+')" style="padding:8px 12px;background:'+bg+';border:1px solid '+bd+';border-radius:8px;color:'+color+';font-size:12px;font-weight:700;cursor:pointer">계산</button>'+
+        '</div>'+
+        '<div id="'+safeIdx+'_out" style="margin-top:6px;min-height:18px"></div>';
+    } else {
+      body='<div style="font-size:12px;color:var(--text3);margin-top:6px;line-height:1.55">'+(it.note||'')+'</div>';
+    }
+    var noteHtml=(it.note && it.mode!=='note')?'<div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.5">'+it.note+'</div>':'';
+    parts.push(
+      '<div style="background:'+bg+';border:1px solid '+bd+';border-radius:12px;padding:12px">'+
+      '<div style="font-size:10px;font-weight:700;color:'+color+';opacity:0.85">['+it.law+'] '+it.cat+'</div>'+
+      '<div style="font-size:13px;font-weight:700;color:var(--text1);margin-top:2px">'+it.name+'</div>'+
+      body+noteHtml+
+      '</div>'
+    );
+  }
+  list.innerHTML=parts.join('');
+}
+function feeCompute(domId, idx){
+  var it=FEE_DATA[idx];
+  if(!it || it.mode!=='input') return;
+  var el=document.getElementById(domId);
+  var out=document.getElementById(domId+'_out');
+  if(!el||!out) return;
+  var v=parseFloat(el.value);
+  if(!isFinite(v) || v<0){ out.innerHTML=''; return; }
+  var insp=0;
+  try{ insp=it.calc(v) || 0; }catch(e){ insp=0; }
+  var hasTech=(typeof it.techCalc==='function') || (typeof it.techAmount==='number');
+  var tech=0;
+  if(typeof it.techCalc==='function'){ try{ tech=it.techCalc(v)||0; }catch(e){ tech=0; } }
+  else if(typeof it.techAmount==='number'){ tech=it.techAmount; }
+  var ot=feeOvertimeSurcharge();
+  var total=insp+tech+ot;
+  var color;
+  if(it.law==='도시가스') color='#7dd8ff';
+  else if(it.law==='LPG') color='#ff9f7f';
+  else if(it.law==='고압가스') color='#c39fff';
+  else if(it.law==='교육비') color='#7dff9f';
+  else if(it.law==='기술검토') color='#ffe070';
+  else if(it.law==='시공감리') color='#9fd0ff';
+  else color='#ffd070';
+  var techColor='#ffe070';
+  if(hasTech){
+    var html=
+      '<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;color:var(--text3)">검사수수료</span><b style="font-size:15px;color:'+color+'">'+feeFmtKRW(insp)+'</b></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:2px"><span style="font-size:11px;color:var(--text3)">기술검토</span><b style="font-size:15px;color:'+techColor+'">'+feeFmtKRW(tech)+'</b></div>'+
+      (ot>0?'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:2px"><span style="font-size:11px;color:var(--text3)">가산금</span><b style="font-size:13px;color:var(--text2)">'+feeFmtKRW(ot)+'</b></div>':'')+
+      '<div style="border-top:1px dashed rgba(255,255,255,0.18);margin-top:3px;padding-top:3px;display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:12px;font-weight:700;color:var(--text2)">합계</span><b style="font-size:17px;color:'+color+'">'+feeFmtKRW(total)+'</b></div>';
+    out.innerHTML=html;
+  } else {
+    if(ot>0){
+      out.innerHTML = '<span style="font-size:15px;font-weight:800;color:'+color+'">'+feeFmtKRW(insp)+'</span> <span style="font-size:10px;color:var(--text3);font-weight:500">+ 가산금 '+feeFmtKRW(ot)+' = '+feeFmtKRW(insp+ot)+'</span>';
+    } else {
+      out.innerHTML = '<span style="font-size:15px;font-weight:800;color:'+color+'">'+feeFmtKRW(insp)+'</span>';
+    }
+  }
+}
+</script>
 
 <!-- Firebase SDK (compat 버전 - 단일 HTML 호환) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
