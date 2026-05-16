@@ -588,12 +588,22 @@ body.is-premium .ad-slot{ display:none !important }
 body.is-webview .ad-slot{ display:none !important }
 
 /* ============================================
-   v0.35: 상단 quickbar 메뉴 항상 노출 (모달 위에도)
+   v0.35→v0.39: 상단 topbar + quickbar 메뉴 항상 노출 (모달 위에도)
    ============================================ */
-/* topbar는 모달보다 항상 위에 */
-#topbar{ z-index:1001 !important }
+/* v0.39: topbar를 position:fixed로 변경 (WebView sticky 호환성 문제 해결) */
+#topbar{
+  position:fixed !important;
+  top:0 !important;
+  left:0 !important;
+  right:0 !important;
+  z-index:1001 !important;
+}
+/* topbar가 fixed이므로 home-screen에 상단 여백 확보 */
+body.home-active #home-screen{
+  padding-top:calc(var(--qb-topbar-h, 50px) + 8px) !important;
+}
 
-/* 메인 작업 모드(홈 아닐 때) — quickbar를 화면 상단에 고정 */
+/* 메인 작업 모드(홈 아닐 때) — quickbar를 topbar 바로 아래 고정 */
 body:not(.home-active) #quickbar{
   position:fixed !important;
   top:var(--qb-topbar-h, 50px) !important;
@@ -603,9 +613,9 @@ body:not(.home-active) #quickbar{
   background:var(--bg1) !important;
   box-shadow:0 2px 6px rgba(0,0,0,0.18);
 }
-/* 고정된 quickbar 영역 확보 */
+/* 메인 작업화면은 topbar + quickbar 만큼 여백 확보 */
 body:not(.home-active) #main-work{
-  padding-top:var(--qb-quickbar-h, 50px) !important;
+  padding-top:var(--qb-offset, 100px) !important;
 }
 /* 풀스크린 모달들은 topbar + quickbar 아래에서 시작 (작은 overlay 류 제외) */
 body:not(.home-active) [id^="modal-"]:not(.modal-overlay):not(#modal-menu):not(#modal-seg){
